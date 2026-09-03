@@ -18,7 +18,7 @@ The agent may inspect opportunities, analyze readiness, prepare an application r
 - Strands `Agent` orchestration with four custom product tools
 - deterministic safety gate independent of model output
 - competition-safe in-memory backend for tests and offline smoke runs
-- Xano adapter for the RolePilot prototype created on 2026-09-03
+- optional Xano adapter for the RolePilot prototype created on 2026-09-03
 - READY, NEEDS_RECORDING, and REVIEW scenarios
 - persisted demo application runs and audit events
 - explicit human approval state with no external submission tool
@@ -44,11 +44,13 @@ Run all tests:
 pytest
 ```
 
-Run the deterministic competition-safe smoke test without AWS credentials or model calls:
+Run the deterministic competition-safe smoke test without AWS credentials, Xano, or model calls:
 
 ```bash
 rolepilot-agent --deterministic-smoke
 ```
+
+The in-memory backend is the canonical judge-safe path and requires no external service. This keeps the competition demo reproducible even when optional integrations are unavailable.
 
 Run the real Strands agent with the default Strands model provider:
 
@@ -58,16 +60,16 @@ rolepilot-agent "Process my casting opportunity queue."
 
 The Strands Python SDK uses Amazon Bedrock by default. A live invocation therefore requires suitable AWS credentials and model access. The deterministic test suite and smoke path do not.
 
-## Xano integration
+## Optional Xano integration
 
-The current RolePilot Xano API can be used by setting the API group base URL, for example:
+The Sep 3 RolePilot Xano prototype is an optional integration, not a runtime dependency. If a compatible Xano API is available, set the API group base URL:
 
 ```bash
 export ROLEPILOT_XANO_BASE_URL="https://YOUR_INSTANCE.xano.io/api:rolepilot"
 rolepilot-agent --backend xano --deterministic-smoke
 ```
 
-The adapter uses the existing `/opportunities`, `/analyze`, `/runs`, and `/runs/{id}/approval` endpoints. The agent-facing safety contract still refuses preparation when the readiness result is not READY.
+The adapter uses `/opportunities`, `/analyze`, `/runs`, and `/runs/{id}/approval`. Its normalization fails closed: malformed or contradictory readiness responses cannot be promoted to READY. If Xano is unavailable, use the default memory backend; the agent, safety gate, tests, and competition demo remain fully usable.
 
 ## Safety boundary
 
@@ -77,7 +79,7 @@ A demo approval can update internal run state only. Tests assert that external s
 
 ## Relationship to the Xano RolePilot prototype
 
-A separate RolePilot/Xano prototype was created on 2026-09-03 during the competition period before this repository was opened. This project may use that prototype as a backend/service foundation. The Strands agent orchestration, agent tools, deterministic safety layer, tests, competition integration, and submission-specific product work are being built in this repository. Reused work is disclosed rather than presented as newly created here.
+A separate RolePilot/Xano prototype was created on 2026-09-03 during the competition period before this repository was opened. This project may use that prototype as an optional backend/service foundation. The Strands agent orchestration, agent tools, deterministic safety layer, tests, competition integration, and submission-specific product work are being built in this repository. Reused work is disclosed rather than presented as newly created here.
 
 ## Official Strands references
 
