@@ -127,14 +127,34 @@ class XanoBackend:
     def analyze(self, opportunity_id: int) -> dict:
         result = self._request("POST", "/analyze", {"opportunity_id": opportunity_id})
         readiness = int(result.get("readiness", 0))
-        can_prepare = bool(result.get("can_prepare", readiness >= 90))
-        if not can_prepare:
-            state = result.get("state", "REVIEW")
-            if state not in {item.value for item in ReadinessState}:
-                state = "REVIEW"
-            result["state"] = state
+
+        raw_can_prepare = result.get("can_prepare")
+        if raw_can_prepare is None:
+            can_prepare = readiness >= 90
+        elif isinstance(raw_can_prepare, bool):
+            can_prepare = raw_can_prepare
         else:
-            result["state"] = "READY"
+            # Fail closed on malformed remote truth. In particular, bool("false")
+            # would incorrectly evaluate to True and could bypass the safety gate.
+            can_prepare = False
+            result["safety_warning"] = "malformed_can_prepare"
+
+        raw_state = result.get("state")
+        valid_states = {item.value for item in ReadinessState}
+
+        if can_prepare and raw_state not in (None, "READY"):
+            # A contradictory backend response must never be normalized upward.
+            can_prepare = False
+            result["safety_warning"] = "inconsistent_ready_state"
+
+        if can_prepare:
+            state = "READY"
+        elif raw_state in valid_states and raw_state != "READY":
+            state = raw_state
+        else:
+            state = "REVIEW"
+
+        result["state"] = state
         result["can_prepare"] = can_prepare
         return result
 
