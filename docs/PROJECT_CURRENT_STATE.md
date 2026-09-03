@@ -1,6 +1,6 @@
 # Project Current State
 
-Updated: 2026-09-03
+Updated: 2026-09-04
 
 ## Mission
 Ship a competition-grade RolePilot Agent for AWS Agents for Humans using the Strands Agents SDK.
@@ -20,6 +20,8 @@ M0-M1: repository bootstrap plus first Strands vertical slice.
 ## Accepted product direction
 RolePilot Agent processes casting opportunities up to the final external action boundary. It may analyze, prepare, persist, and request human approval. It must not submit a real casting application.
 
+The competition demo must remain reproducible without Xano. The in-memory backend is the canonical judge-safe path. Xano is an optional adapter only and must never become a required runtime dependency.
+
 ## Current implementation
 - Python project metadata added.
 - MIT license added.
@@ -27,29 +29,33 @@ RolePilot Agent processes casting opportunities up to the final external action 
 - Four custom product tools added.
 - Deterministic safety gate added.
 - Memory backend added for credential-free tests and demos.
-- Xano adapter added for the Sep 3 RolePilot prototype.
-- Xano readiness normalization now fails closed on malformed `can_prepare` values and contradictory READY/non-READY state.
+- Optional Xano adapter added for the Sep 3 RolePilot prototype.
+- Xano readiness normalization fails closed on malformed `can_prepare` values and contradictory READY/non-READY state.
 - Regression tests cover malformed string booleans and inconsistent remote readiness state.
 - Safety invariant and Xano adapter tests added.
 - CI added for Python 3.10 and 3.12 plus deterministic smoke.
 - Architecture documented.
-- README includes install, smoke, Xano, safety, and reuse disclosure.
+- README now makes the offline MemoryBackend the canonical judge-safe path and explicitly treats Xano as optional.
 
 ## Exact verification state
-- Current PR head after the safety fix: `ca5653b46b15b7657911f5408472082b42c66e05`; branch is 21 commits ahead / 0 behind `main` and PR is mergeable.
-- Previous exact-head CI run `33789000226` reached job records but failed before any workflow step executed: Python 3.10 concluded failure with zero steps and Python 3.12 was cancelled with zero steps.
-- At the first post-fix inspection, GitHub had not instantiated a workflow run yet for `ca5653b46b15b7657911f5408472082b42c66e05`.
-- This remains classified as an Actions runner/startup infrastructure failure until a job executes a real checkout/install/test step.
-- The newly added fail-closed regressions are committed but not yet independently executed in CI because of that infrastructure blocker.
-- Official current Strands documentation confirms Python 3.10+, `Agent`, custom `@tool` functions, and Bedrock as the default model provider, matching this implementation contract.
+- PR #2 remains the only active competition implementation lane.
+- Before this current-state update, the exact head was `c8e0d456e6b220c9a0547ee56e889355e925037f`, 23 commits ahead / 0 behind `main`.
+- Exact-head CI run `33815188406` instantiated two job records but neither job executed a single workflow step. Python 3.10 concluded failure with `steps=[]`, `runner_id=0`; Python 3.12 concluded cancelled with `steps=[]`, `runner_id=0`.
+- This is classified as GitHub-hosted Actions startup/infrastructure failure, not a demonstrated product/test failure.
+- A clean-environment clone/test attempt from the steward runtime was also unavailable because that runtime could not resolve github.com, so it does not provide equivalent independent verification.
+- The fail-closed Xano regressions remain committed but are not yet accepted as CI-verified.
 
 ## Evidence still required before accepting M0-M1
-- Exact-head CI executes real steps and passes on both Python versions.
+- Exact-head CI executes real checkout/install/test steps and passes on both Python versions, or equivalent clean-environment evidence is obtained.
 - Deterministic smoke passes in CI or equivalent clean-environment evidence is obtained.
 - New Xano fail-closed regression tests execute successfully.
 - Independent diff/scope review remains clean.
 - No private data or secrets are present.
-- Merge only after the verification blocker is cleared or independently reproduced with equivalent evidence.
+
+## Current external integration status
+- Do not rely on Xano availability for the competition critical path.
+- AWS/Bedrock live-model verification remains a later owner-gated M5 step.
+- No AWS spend or paid resource creation is authorized.
 
 ## Next milestone after M0-M1
 M2: queue autonomy. The Strands agent should process multiple opportunities in one request, prepare all safe READY items, and surface only recording/review/human-decision blockers with persisted evidence.
