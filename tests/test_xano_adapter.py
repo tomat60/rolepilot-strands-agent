@@ -71,3 +71,43 @@ def test_xano_demo_approval_is_explicitly_non_external(monkeypatch):
     result = backend.record_human_decision(7, True)
 
     assert result["external_submission_performed"] is False
+
+
+def test_xano_analyze_fails_closed_on_string_false(monkeypatch):
+    backend = XanoBackend("https://example.invalid/api:rolepilot")
+    monkeypatch.setattr(
+        backend,
+        "_request",
+        lambda method, path, payload=None: {
+            "opportunity_id": payload["opportunity_id"],
+            "readiness": 99,
+            "state": "READY",
+            "can_prepare": "false",
+        },
+    )
+
+    result = backend.analyze(1)
+
+    assert result["can_prepare"] is False
+    assert result["state"] == "REVIEW"
+    assert result["safety_warning"] == "malformed_can_prepare"
+
+
+def test_xano_analyze_fails_closed_on_contradictory_state(monkeypatch):
+    backend = XanoBackend("https://example.invalid/api:rolepilot")
+    monkeypatch.setattr(
+        backend,
+        "_request",
+        lambda method, path, payload=None: {
+            "opportunity_id": payload["opportunity_id"],
+            "readiness": 99,
+            "state": "REVIEW",
+            "can_prepare": True,
+        },
+    )
+
+    result = backend.analyze(1)
+
+    assert result["can_prepare"] is False
+    assert result["state"] == "REVIEW"
+    assert result["safety_warning"] == "inconsistent_ready_state"
