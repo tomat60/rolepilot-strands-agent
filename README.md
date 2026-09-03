@@ -10,28 +10,80 @@ This repository is the competition-specific Strands implementation for the AWS *
 
 Automate preparation. Keep authority human.
 
-The agent may inspect opportunities, analyze readiness, select approved materials, prepare an application run, and persist an audit trail. It must not submit a real casting application. Consequential external action remains behind an explicit human approval boundary.
+The agent may inspect opportunities, analyze readiness, prepare an application run, persist an audit trail, and record a human decision. It must not submit a real casting application. Consequential external action remains outside the demo boundary.
 
-## Current build status
+## What is implemented
 
-Repository bootstrap started on 2026-09-03. The first vertical slice is being implemented now.
+- Python 3.10+ project using `strands-agents`
+- Strands `Agent` orchestration with four custom product tools
+- deterministic safety gate independent of model output
+- competition-safe in-memory backend for tests and offline smoke runs
+- Xano adapter for the RolePilot prototype created on 2026-09-03
+- READY, NEEDS_RECORDING, and REVIEW scenarios
+- persisted demo application runs and audit events
+- explicit human approval state with no external submission tool
+- CI for Python 3.10 and 3.12
+
+## Architecture
+
+`User goal -> Strands Agent -> custom tools -> deterministic safety gate -> backend -> persisted run -> human approval`
+
+The Strands agent decides which tools to call. Deterministic product rules separately enforce whether preparation is allowed. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full diagram.
+
+## Local setup
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -e '.[dev]'
+```
+
+Run all tests:
+
+```bash
+pytest
+```
+
+Run the deterministic competition-safe smoke test without AWS credentials or model calls:
+
+```bash
+rolepilot-agent --deterministic-smoke
+```
+
+Run the real Strands agent with the default Strands model provider:
+
+```bash
+rolepilot-agent "Process my casting opportunity queue."
+```
+
+The Strands Python SDK uses Amazon Bedrock by default. A live invocation therefore requires suitable AWS credentials and model access. The deterministic test suite and smoke path do not.
+
+## Xano integration
+
+The current RolePilot Xano API can be used by setting the API group base URL, for example:
+
+```bash
+export ROLEPILOT_XANO_BASE_URL="https://YOUR_INSTANCE.xano.io/api:rolepilot"
+rolepilot-agent --backend xano --deterministic-smoke
+```
+
+The adapter uses the existing `/opportunities`, `/analyze`, `/runs`, and `/runs/{id}/approval` endpoints. The agent-facing safety contract still refuses preparation when the readiness result is not READY.
+
+## Safety boundary
+
+This repository intentionally contains **no tool that performs a final external casting submission**.
+
+A demo approval can update internal run state only. Tests assert that external submission remains false even after approval.
 
 ## Relationship to the Xano RolePilot prototype
 
-A separate RolePilot/Xano prototype was created on 2026-09-03 during the competition period before this repository was opened. This project may use that prototype as a backend/service foundation. The Strands agent orchestration, agent tools, safety layer, tests, competition integration, and submission-specific product work are being built in this repository. Reused work will be disclosed rather than presented as newly created here.
+A separate RolePilot/Xano prototype was created on 2026-09-03 during the competition period before this repository was opened. This project may use that prototype as a backend/service foundation. The Strands agent orchestration, agent tools, deterministic safety layer, tests, competition integration, and submission-specific product work are being built in this repository. Reused work is disclosed rather than presented as newly created here.
 
-## Planned architecture
+## Official Strands references
 
-`User goal -> Strands Agent -> product tools -> deterministic safety gate -> Xano/local backend -> persisted run -> human approval`
-
-The Strands agent decides which tools to call. Deterministic product rules separately enforce that incomplete, recording-required, or manual-review opportunities cannot cross the preparation gate.
-
-## Development
-
-Python 3.10+ is required. Full setup and run instructions will be added with the first implementation slice.
-
-Official Strands documentation: https://strandsagents.com/docs/user-guide/quickstart/python/
+- Python quickstart: https://strandsagents.com/docs/user-guide/quickstart/python/
+- Custom tools: https://strandsagents.com/docs/user-guide/concepts/tools/custom-tools/
 
 ## License
 
-MIT license will be included in the bootstrap milestone.
+MIT. See [`LICENSE`](LICENSE).
