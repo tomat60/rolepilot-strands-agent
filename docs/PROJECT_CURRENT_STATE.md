@@ -28,21 +28,25 @@ RolePilot Agent processes casting opportunities up to the final external action 
 - Deterministic safety gate added.
 - Memory backend added for credential-free tests and demos.
 - Xano adapter added for the Sep 3 RolePilot prototype.
+- Xano readiness normalization now fails closed on malformed `can_prepare` values and contradictory READY/non-READY state.
+- Regression tests cover malformed string booleans and inconsistent remote readiness state.
 - Safety invariant and Xano adapter tests added.
 - CI added for Python 3.10 and 3.12 plus deterministic smoke.
 - Architecture documented.
 - README includes install, smoke, Xano, safety, and reuse disclosure.
 
 ## Exact verification state
-- PR #2 is mergeable.
-- First exact-head CI run `33788836236` reached real jobs but failed before any workflow steps executed: Python 3.10 concluded failure with zero steps and Python 3.12 was cancelled with zero steps.
-- This is currently classified as an Actions runner/startup infrastructure failure, not a demonstrated product/test failure. There is no code-level failure log because no test/install step started.
-- GitHub Actions remains a blocker for terminal M0-M1 acceptance until a real job executes steps.
-- Official current Strands documentation confirms Python 3.10+, `Agent`, custom `@tool` functions, `tool_name`, and Bedrock as the default model provider, matching this implementation contract.
+- Current PR head after the safety fix: `ca5653b46b15b7657911f5408472082b42c66e05`; branch is 21 commits ahead / 0 behind `main` and PR is mergeable.
+- Previous exact-head CI run `33789000226` reached job records but failed before any workflow step executed: Python 3.10 concluded failure with zero steps and Python 3.12 was cancelled with zero steps.
+- At the first post-fix inspection, GitHub had not instantiated a workflow run yet for `ca5653b46b15b7657911f5408472082b42c66e05`.
+- This remains classified as an Actions runner/startup infrastructure failure until a job executes a real checkout/install/test step.
+- The newly added fail-closed regressions are committed but not yet independently executed in CI because of that infrastructure blocker.
+- Official current Strands documentation confirms Python 3.10+, `Agent`, custom `@tool` functions, and Bedrock as the default model provider, matching this implementation contract.
 
 ## Evidence still required before accepting M0-M1
 - Exact-head CI executes real steps and passes on both Python versions.
 - Deterministic smoke passes in CI or equivalent clean-environment evidence is obtained.
+- New Xano fail-closed regression tests execute successfully.
 - Independent diff/scope review remains clean.
 - No private data or secrets are present.
 - Merge only after the verification blocker is cleared or independently reproduced with equivalent evidence.
