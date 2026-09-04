@@ -57,6 +57,8 @@ Generate the self-contained judge report without AWS credentials or paid model c
 rolepilot-agent --judge-report rolepilot-report.html
 ```
 
+For the complete free judge testing path, expected observations, and release-evidence boundary, see [`docs/JUDGE_TESTING.md`](docs/JUDGE_TESTING.md).
+
 The in-memory backend is the canonical judge-safe path and requires no external service. This keeps the competition demo reproducible even when optional integrations are unavailable.
 
 Generated reports render backend-provided opportunity and audit data. The canonical in-memory demo is synthetic and public-safe, but a report generated from any external/private backend should be treated as potentially private and must not be committed. The documented `rolepilot-report*.html` artifact names are ignored by Git.
