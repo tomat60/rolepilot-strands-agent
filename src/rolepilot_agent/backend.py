@@ -130,8 +130,9 @@ class XanoBackend:
             with request.urlopen(req, timeout=self.timeout_seconds) as response:
                 return json.loads(response.read().decode("utf-8"))
         except error.HTTPError as exc:
-            body = exc.read().decode("utf-8", errors="replace")
-            raise RuntimeError(f"Xano returned HTTP {exc.code}: {body}") from exc
+            # Remote error bodies may contain casting/profile/private backend data.
+            # Preserve only the status code at this public adapter boundary.
+            raise RuntimeError(f"Xano returned HTTP {exc.code}") from exc
 
     def list_opportunities(self) -> list[dict]:
         return self._request("GET", "/opportunities")
