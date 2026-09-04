@@ -38,6 +38,34 @@ def test_queue_autonomy_prepares_only_ready_and_surfaces_real_decisions():
     assert backend.runs[1].external_submission_performed is False
 
 
+def test_queue_rerun_reuses_existing_active_preparation_run():
+    backend = MemoryBackend()
+
+    first = process_queue_safely(backend)
+    second = process_queue_safely(backend)
+
+    assert len(backend.runs) == 1
+    assert first["prepared"][0]["run"]["id"] == 1
+    assert second["prepared"][0]["run"]["id"] == 1
+    assert second["prepared"][0]["run"]["approval_state"] == "PENDING_HUMAN_APPROVAL"
+    assert second["external_submission_performed"] is False
+
+
+def test_changes_requested_allows_fresh_preparation_run():
+    backend = MemoryBackend()
+
+    first = process_queue_safely(backend)
+    first_run_id = first["prepared"][0]["run"]["id"]
+    backend.record_human_decision(first_run_id, approved=False)
+
+    second = process_queue_safely(backend)
+
+    assert len(backend.runs) == 2
+    assert second["prepared"][0]["run"]["id"] == 2
+    assert second["prepared"][0]["run"]["approval_state"] == "PENDING_HUMAN_APPROVAL"
+    assert second["external_submission_performed"] is False
+
+
 def test_queue_failure_isolated_to_one_opportunity_and_fails_closed():
     class OneOpportunityFailsBackend(MemoryBackend):
         def analyze(self, opportunity_id: int) -> dict:
