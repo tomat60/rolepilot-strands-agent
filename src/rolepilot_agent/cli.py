@@ -6,6 +6,7 @@ import os
 
 from .agent import build_agent
 from .backend import MemoryBackend, XanoBackend
+from .judge_report import write_judge_report
 
 
 def _backend_from_args(args):
@@ -29,8 +30,18 @@ def main() -> None:
         action="store_true",
         help="Run the safety layer without invoking a model or AWS.",
     )
+    parser.add_argument(
+        "--judge-report",
+        metavar="PATH",
+        help="Write a self-contained HTML product report using the deterministic queue path.",
+    )
     args = parser.parse_args()
     backend = _backend_from_args(args)
+
+    if args.judge_report:
+        output = write_judge_report(backend, args.judge_report)
+        print(f"Judge report written to {output}")
+        return
 
     if args.deterministic_smoke:
         summary = []
