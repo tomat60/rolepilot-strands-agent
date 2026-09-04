@@ -1,3 +1,6 @@
+from io import BytesIO
+from urllib.error import HTTPError
+
 import pytest
 
 from rolepilot_agent.backend import XanoBackend
@@ -111,3 +114,27 @@ def test_xano_analyze_fails_closed_on_contradictory_state(monkeypatch):
     assert result["can_prepare"] is False
     assert result["state"] == "REVIEW"
     assert result["safety_warning"] == "inconsistent_ready_state"
+
+
+def test_xano_http_error_does_not_expose_remote_body(monkeypatch):
+    backend = XanoBackend("https://example.invalid/api:rolepilot")
+    private_body = b'{"email":"private@example.com","casting":"secret"}'
+
+    def fail_urlopen(*args, **kwargs):
+        raise HTTPError(
+            url="https://example.invalid/api:rolepilot/opportunities",
+            code=403,
+            msg="Forbidden",
+            hdrs=None,
+            fp=BytesIO(private_body),
+        )
+
+    monkeypatch.setattr("rolepilot_agent.backend.request.urlopen", fail_urlopen)
+
+    with pytest.raises(RuntimeError) as captured:
+        backend.list_opportunities()
+
+    message = str(captured.value)
+    assert message == "Xano returned HTTP 403"
+    assert "private@example.com" not in message
+    assert "secret" not in message
