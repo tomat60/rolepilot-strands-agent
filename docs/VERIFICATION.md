@@ -15,6 +15,14 @@ python -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -e '.[dev]'
+python scripts/verify_release.py
+```
+
+The verifier runs pytest, the deterministic smoke path, and judge-report generation. It writes `release-evidence/verification.json` with the exact commit SHA, Python version, command results and explicit manual-review/live-Bedrock pending states, plus `release-evidence/rolepilot-report.html` for visual QA. The entire generated evidence directory is ignored by Git because external/private backends may expose opportunity data.
+
+If the verifier cannot be used, the equivalent commands are:
+
+```bash
 pytest
 rolepilot-agent --deterministic-smoke
 rolepilot-agent --judge-report rolepilot-report.html
@@ -53,7 +61,7 @@ Before the final submission commit:
 
 - inspect the complete changed-file list;
 - inspect the final diff for credentials, tokens, URLs containing secrets, private casting data, private names or real application content;
-- confirm generated `rolepilot-report*.html` artifacts are not tracked;
+- confirm generated `rolepilot-report*.html` and `release-evidence/` artifacts are not tracked;
 - confirm the MIT license, README, architecture documentation and Xano reuse disclosure are visible;
 - confirm every public claim matches observed behavior.
 
