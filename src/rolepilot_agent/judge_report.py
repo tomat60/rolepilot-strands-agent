@@ -25,7 +25,7 @@ def render_judge_report(backend: Backend) -> str:
     prepared_cards = []
     for item in result["prepared"]:
         run = item["run"]
-        audit = "".join(f"<li>{escape(event)}</li>" for event in run["audit_events"])
+        audit = "".join(f"<li>{escape(str(event))}</li>" for event in run["audit_events"])
         prepared_cards.append(
             f"""
             <article class="card ready">
@@ -34,10 +34,10 @@ def render_judge_report(backend: Backend) -> str:
                 <span class="muted">prepared by agent</span>
               </div>
               <h3>{escape(str(item['title']))}</h3>
-              <p>Application run <strong>#{run['id']}</strong> is prepared and persisted.</p>
+              <p>Application run <strong>#{escape(str(run['id']))}</strong> is prepared and persisted.</p>
               <div class="gate gate-ready">
                 <span class="gate-label">Human approval</span>
-                <strong>{escape(run['approval_state'])}</strong>
+                <strong>{escape(str(run['approval_state']))}</strong>
               </div>
               <details><summary>View audit trace</summary><ol>{audit}</ol></details>
               <span class="legacy-test-marker" aria-hidden="true">READY · PREPARED</span>
