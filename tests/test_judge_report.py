@@ -12,5 +12,5 @@ def test_judge_report_shows_prepared_work_decisions_and_zero_submission():
     assert "READY · PREPARED" in html
     assert "NEEDS_RECORDING" in html
     assert "REVIEW" in html
-    assert "Human approval: <strong>PENDING</strong>" in html
+    assert "Human approval: <strong>PENDING_HUMAN_APPROVAL</strong>" in html
     assert "no real casting submission path" in html
