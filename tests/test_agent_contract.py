@@ -36,3 +36,42 @@ def test_queue_autonomy_prepares_only_ready_and_surfaces_real_decisions():
 
     assert len(backend.runs) == 1
     assert backend.runs[1].external_submission_performed is False
+
+
+def test_queue_failure_isolated_to_one_opportunity_and_fails_closed():
+    class OneOpportunityFailsBackend(MemoryBackend):
+        def analyze(self, opportunity_id: int) -> dict:
+            if opportunity_id == 2:
+                raise RuntimeError("private backend detail must not escape")
+            return super().analyze(opportunity_id)
+
+    backend = OneOpportunityFailsBackend()
+    result = process_queue_safely(backend)
+
+    assert result["external_submission_performed"] is False
+    assert [item["opportunity_id"] for item in result["prepared"]] == [1]
+
+    decisions = {item["opportunity_id"]: item for item in result["decision_points"]}
+    assert decisions[2]["state"] == "REVIEW"
+    assert decisions[2]["reasons"] == ["processing_error:RuntimeError"]
+    assert "private backend detail" not in str(decisions[2])
+    assert decisions[3]["state"] == "REVIEW"
+
+
+def test_prepare_failure_becomes_review_and_queue_continues():
+    class PrepareFailsBackend(MemoryBackend):
+        def create_run(self, opportunity_id: int) -> dict:
+            if opportunity_id == 1:
+                raise TimeoutError("temporary persistence failure")
+            return super().create_run(opportunity_id)
+
+    backend = PrepareFailsBackend()
+    result = process_queue_safely(backend)
+
+    assert result["prepared"] == []
+    decisions = {item["opportunity_id"]: item for item in result["decision_points"]}
+    assert decisions[1]["state"] == "REVIEW"
+    assert decisions[1]["reasons"] == ["processing_error:TimeoutError"]
+    assert decisions[2]["state"] == "NEEDS_RECORDING"
+    assert decisions[3]["state"] == "REVIEW"
+    assert backend.runs == {}
