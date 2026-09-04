@@ -10,3 +10,7 @@ build/
 .env
 .env.*
 .DS_Store
+
+# Generated judge/demo artifacts may contain backend-provided opportunity data.
+rolepilot-report.html
+rolepilot-report-*.html
