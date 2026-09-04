@@ -11,18 +11,36 @@ def process_queue_safely(backend: Backend) -> dict:
     This deterministic orchestration is intentionally safe to run without a model:
     every opportunity is analyzed, READY items are prepared, and all other items
     are surfaced as decision points. A failure on one opportunity fails that lane
-    closed to REVIEW without stopping the rest of the queue. No external action is
-    available here.
+    closed to REVIEW without stopping the rest of the queue. The returned execution
+    trace makes the work performed auditable without exposing private exception text.
+    No external action is available here.
     """
     prepared: list[dict] = []
     decisions: list[dict] = []
+    execution_trace: list[dict] = []
 
-    for opportunity in backend.list_opportunities():
+    opportunities = backend.list_opportunities()
+    execution_trace.append(
+        {
+            "action": "list_opportunities",
+            "outcome": "ok",
+            "count": len(opportunities),
+        }
+    )
+
+    for opportunity in opportunities:
         raw_opportunity_id = opportunity.get("id")
         try:
             opportunity_id = int(raw_opportunity_id)
             analysis = backend.analyze(opportunity_id)
             state = analysis.get("state", "REVIEW")
+            execution_trace.append(
+                {
+                    "action": "analyze_opportunity",
+                    "opportunity_id": opportunity_id,
+                    "outcome": state,
+                }
+            )
 
             if state == "READY" and analysis.get("can_prepare") is True:
                 run = backend.create_run(opportunity_id)
@@ -31,6 +49,14 @@ def process_queue_safely(backend: Backend) -> dict:
                         "opportunity_id": opportunity_id,
                         "title": opportunity.get("title"),
                         "run": run,
+                    }
+                )
+                execution_trace.append(
+                    {
+                        "action": "prepare_application_run",
+                        "opportunity_id": opportunity_id,
+                        "outcome": "PENDING_HUMAN_APPROVAL",
+                        "run_id": run.get("id"),
                     }
                 )
                 continue
@@ -43,22 +69,39 @@ def process_queue_safely(backend: Backend) -> dict:
                     "reasons": analysis.get("reasons", []),
                 }
             )
+            execution_trace.append(
+                {
+                    "action": "stop_for_human_decision",
+                    "opportunity_id": opportunity_id,
+                    "outcome": state,
+                }
+            )
         except Exception as exc:
             # One malformed or temporarily failing opportunity must not abort the
             # entire autonomous queue. Fail the affected lane closed and expose
             # only the exception class, never backend/private exception text.
+            safe_error = f"processing_error:{type(exc).__name__}"
             decisions.append(
                 {
                     "opportunity_id": raw_opportunity_id,
                     "title": opportunity.get("title"),
                     "state": "REVIEW",
-                    "reasons": [f"processing_error:{type(exc).__name__}"],
+                    "reasons": [safe_error],
+                }
+            )
+            execution_trace.append(
+                {
+                    "action": "stop_for_human_decision",
+                    "opportunity_id": raw_opportunity_id,
+                    "outcome": "REVIEW",
+                    "reason": safe_error,
                 }
             )
 
     return {
         "prepared": prepared,
         "decision_points": decisions,
+        "execution_trace": execution_trace,
         "external_submission_performed": False,
     }
 
@@ -95,6 +138,7 @@ def build_tools(backend: Backend):
 
         READY opportunities are prepared and persisted. NEEDS_RECORDING, REVIEW,
         and per-opportunity processing failures are surfaced without preparation.
+        The result includes a deterministic execution trace for auditability.
         This tool cannot submit externally.
         """
         return process_queue_safely(backend)
