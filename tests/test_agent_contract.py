@@ -37,6 +37,25 @@ def test_queue_autonomy_prepares_only_ready_and_surfaces_real_decisions():
     assert len(backend.runs) == 1
     assert backend.runs[1].external_submission_performed is False
 
+    trace = result["execution_trace"]
+    assert trace[0] == {"action": "list_opportunities", "outcome": "ok", "count": 3}
+    assert {
+        "action": "prepare_application_run",
+        "opportunity_id": 1,
+        "outcome": "PENDING_HUMAN_APPROVAL",
+        "run_id": 1,
+    } in trace
+    assert {
+        "action": "stop_for_human_decision",
+        "opportunity_id": 2,
+        "outcome": "NEEDS_RECORDING",
+    } in trace
+    assert {
+        "action": "stop_for_human_decision",
+        "opportunity_id": 3,
+        "outcome": "REVIEW",
+    } in trace
+
 
 def test_queue_rerun_reuses_existing_active_preparation_run():
     backend = MemoryBackend()
@@ -84,6 +103,13 @@ def test_queue_failure_isolated_to_one_opportunity_and_fails_closed():
     assert decisions[2]["reasons"] == ["processing_error:RuntimeError"]
     assert "private backend detail" not in str(decisions[2])
     assert decisions[3]["state"] == "REVIEW"
+    assert "private backend detail" not in str(result["execution_trace"])
+    assert {
+        "action": "stop_for_human_decision",
+        "opportunity_id": 2,
+        "outcome": "REVIEW",
+        "reason": "processing_error:RuntimeError",
+    } in result["execution_trace"]
 
 
 def test_prepare_failure_becomes_review_and_queue_continues():
