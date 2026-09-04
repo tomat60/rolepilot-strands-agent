@@ -59,6 +59,8 @@ rolepilot-agent --judge-report rolepilot-report.html
 
 The in-memory backend is the canonical judge-safe path and requires no external service. This keeps the competition demo reproducible even when optional integrations are unavailable.
 
+Generated reports render backend-provided opportunity and audit data. The canonical in-memory demo is synthetic and public-safe, but a report generated from any external/private backend should be treated as potentially private and must not be committed. The documented `rolepilot-report*.html` artifact names are ignored by Git.
+
 ## Optional live Amazon Bedrock path
 
 The Strands Python SDK supports Amazon Bedrock as its default model provider, but RolePilot deliberately does **not** invoke a live model merely because the CLI was started. A Bedrock invocation may incur AWS usage cost, so live execution requires an explicit CLI opt-in plus an explicit model and region.
