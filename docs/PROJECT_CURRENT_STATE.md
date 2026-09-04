@@ -36,14 +36,14 @@ The competition demo must remain reproducible without Xano or paid model calls. 
 - Judge report escapes backend-controlled run id, approval state and audit-event values before HTML rendering.
 - Generated judge-report artifact names are ignored by Git and README warns that reports from external/private backends may contain private opportunity/audit data and must not be committed.
 - M4 readiness matrix covers READY, recording-required, manual-review, missing/unapproved asset, combined blocker and blocker precedence, with fail-closed `require_preparable` assertions.
-- M4/M6 now include `scripts/verify_release.py`, a credential-free release verifier that runs pytest, deterministic smoke and judge-report generation and records exact SHA/Python/command evidence in an ignored `release-evidence/` directory. Manual desktop/mobile visual review and live Bedrock remain explicitly pending instead of being auto-claimed.
+- M4/M6 include `scripts/verify_release.py`, a credential-free release verifier that runs pytest, deterministic smoke and judge-report generation and records exact SHA/Python/command evidence in an ignored `release-evidence/` directory. Manual desktop/mobile visual review and live Bedrock remain explicitly pending instead of being auto-claimed.
 - M5 has explicit `--live-bedrock` opt-in plus required model id and region before constructing `BedrockModel`; no live AWS call or paid resource creation has been performed.
-- M6 includes `docs/SUBMISSION_DRAFT.md`, `docs/DEMO_SCRIPT.md`, and `docs/VERIFICATION.md`; the video plan stays under five minutes and must not claim live Bedrock until verified.
+- M6 includes `docs/SUBMISSION_DRAFT.md`, `docs/DEMO_SCRIPT.md`, `docs/VERIFICATION.md`, and `docs/JUDGE_TESTING.md`. The new judge-testing guide provides an English, free, credential-free install/test path, expected observable behavior, safety expectations, and optional-integration boundaries required for judging/testing. README links directly to it.
 
 ## Exact verification state
 - PR #2 remains the only active competition implementation lane.
-- Current implementation head before this checkpoint commit is `88e80da802e6aa862d7251aec1ef870b4a37f521`.
-- Previous exact-head Actions run `33886382293` at head `166bda08bce789a4b964d7befb98d3d8f7a793f6` failed before any workflow steps executed: Python 3.12 concluded failure with no steps and Python 3.10 was cancelled with no steps.
+- Current implementation head before this checkpoint commit is `2f7bc3ec455ccf4342f6a4a03a115e5457239ed8`.
+- Last inspected exact-head Actions run before this documentation slice was `33891928541` at head `947b4206bbfbf341ad4b6e96daa12829cd50874b`; it failed before any workflow steps executed.
 - Treat zero-step failures as infrastructure startup failures, not executed product/test evidence. Do not blind-rerun them.
 - Refetch exact-head CI after this checkpoint commit before accepting any slice.
 
@@ -59,6 +59,7 @@ The competition demo must remain reproducible without Xano or paid model calls. 
 ## Current competition authority checked 2026-09-04
 - Official Devpost deadline remains 2026-09-14 17:00 PDT.
 - Promotional-credit requests remain due 2026-09-11 12:00 PT while supplies last.
+- Official submission requirements require a public repository with MIT/Apache license, README, architecture diagram, English submission materials, a public YouTube/Vimeo video of at most five minutes, AWS Builder ID, and free access to a working project/test build through the judging period. A live demo link is optional but can strengthen Technical Implementation.
 - Official rules allow standard tools/libraries but require disclosure of other pre-existing work incorporated into the project.
 - Current official Strands documentation continues to support Python custom `@tool` functions and agent-selected tools.
 
