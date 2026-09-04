@@ -5,6 +5,48 @@ from strands import tool
 from .backend import Backend
 
 
+def process_queue_safely(backend: Backend) -> dict:
+    """Process the full queue up to the human/external-action boundary.
+
+    This deterministic orchestration is intentionally safe to run without a model:
+    every opportunity is analyzed, READY items are prepared, and all other items
+    are surfaced as decision points. No external action is available here.
+    """
+    prepared: list[dict] = []
+    decisions: list[dict] = []
+
+    for opportunity in backend.list_opportunities():
+        opportunity_id = int(opportunity["id"])
+        analysis = backend.analyze(opportunity_id)
+        state = analysis.get("state", "REVIEW")
+
+        if state == "READY" and analysis.get("can_prepare") is True:
+            run = backend.create_run(opportunity_id)
+            prepared.append(
+                {
+                    "opportunity_id": opportunity_id,
+                    "title": opportunity.get("title"),
+                    "run": run,
+                }
+            )
+            continue
+
+        decisions.append(
+            {
+                "opportunity_id": opportunity_id,
+                "title": opportunity.get("title"),
+                "state": state,
+                "reasons": analysis.get("reasons", []),
+            }
+        )
+
+    return {
+        "prepared": prepared,
+        "decision_points": decisions,
+        "external_submission_performed": False,
+    }
+
+
 def build_tools(backend: Backend):
     @tool
     def list_casting_opportunities() -> list[dict]:
@@ -32,6 +74,15 @@ def build_tools(backend: Backend):
         return backend.create_run(opportunity_id)
 
     @tool
+    def process_casting_queue() -> dict:
+        """Process every available opportunity and return only prepared work and real decision points.
+
+        READY opportunities are prepared and persisted. NEEDS_RECORDING and REVIEW
+        opportunities are surfaced without preparation. This tool cannot submit externally.
+        """
+        return process_queue_safely(backend)
+
+    @tool
     def record_human_decision(run_id: int, approved: bool) -> dict:
         """Record the human decision for a prepared demo run.
 
@@ -47,5 +98,6 @@ def build_tools(backend: Backend):
         list_casting_opportunities,
         analyze_casting_opportunity,
         prepare_application_run,
+        process_casting_queue,
         record_human_decision,
     ]
