@@ -29,28 +29,29 @@ The competition demo must remain reproducible without Xano or paid model calls. 
 - Deterministic READY / NEEDS_RECORDING / REVIEW safety gate is independent of model output.
 - MemoryBackend is the credential-free judge-safe path; Xano is optional and fails closed on malformed or contradictory readiness state.
 - Queue autonomy prepares only safe READY opportunities, persists runs/audit events, isolates per-opportunity failures, and returns unresolved recording/review decision points.
-- Queue processing now returns a deterministic execution trace covering opportunity discovery, per-opportunity analysis, safe preparation, and human-decision stops. Failure trace entries expose only exception classes, never private backend exception text. Regression coverage locks the trace contract.
-- MemoryBackend preparation is idempotent for active runs: rerunning the queue reuses the existing PENDING_HUMAN_APPROVAL or APPROVED_DEMO_STATE run instead of creating duplicates. A CHANGES_REQUESTED run permits a fresh preparation run. Regression coverage locks both behaviors.
+- Queue processing returns a deterministic execution trace covering opportunity discovery, per-opportunity analysis, safe preparation, and human-decision stops. Failure trace entries expose only exception classes, never private backend exception text.
+- MemoryBackend preparation is idempotent for active runs: rerunning the queue reuses the existing PENDING_HUMAN_APPROVAL or APPROVED_DEMO_STATE run instead of creating duplicates. A CHANGES_REQUESTED run permits a fresh preparation run.
 - Competition/demo flows contain no external submission tool; human approval changes internal demo state only.
 - M3 judge-facing responsive HTML report is generated from the same deterministic queue/safety path and exposes Discover -> Inspect -> Decide -> Prepare -> Stop, prepared work, decision inbox, approval boundary and zero external submissions.
-- Judge report escapes backend-controlled run id, approval state and audit-event values before HTML rendering. A regression injects HTML/script payloads and asserts they are encoded rather than executable.
-- Generated judge-report artifact names are ignored by Git and README explicitly warns that reports from external/private backends may contain private opportunity/audit data and must not be committed.
+- Judge report escapes backend-controlled run id, approval state and audit-event values before HTML rendering.
+- Generated judge-report artifact names are ignored by Git and README warns that reports from external/private backends may contain private opportunity/audit data and must not be committed.
 - M4 readiness matrix covers READY, recording-required, manual-review, missing/unapproved asset, combined blocker and blocker precedence, with fail-closed `require_preparable` assertions.
+- M4/M6 now include `scripts/verify_release.py`, a credential-free release verifier that runs pytest, deterministic smoke and judge-report generation and records exact SHA/Python/command evidence in an ignored `release-evidence/` directory. Manual desktop/mobile visual review and live Bedrock remain explicitly pending instead of being auto-claimed.
 - M5 has explicit `--live-bedrock` opt-in plus required model id and region before constructing `BedrockModel`; no live AWS call or paid resource creation has been performed.
 - M6 includes `docs/SUBMISSION_DRAFT.md`, `docs/DEMO_SCRIPT.md`, and `docs/VERIFICATION.md`; the video plan stays under five minutes and must not claim live Bedrock until verified.
 
 ## Exact verification state
 - PR #2 remains the only active competition implementation lane.
-- Current implementation head after the execution-trace regression is `136d336201717e421567edf27a3ec316616492ee` before this checkpoint commit.
-- Exact-head Actions run `33886322763` again failed before any workflow steps executed: Python 3.10 concluded failure with no steps and Python 3.12 was cancelled with no steps.
+- Current implementation head before this checkpoint commit is `88e80da802e6aa862d7251aec1ef870b4a37f521`.
+- Previous exact-head Actions run `33886382293` at head `166bda08bce789a4b964d7befb98d3d8f7a793f6` failed before any workflow steps executed: Python 3.12 concluded failure with no steps and Python 3.10 was cancelled with no steps.
 - Treat zero-step failures as infrastructure startup failures, not executed product/test evidence. Do not blind-rerun them.
 - Refetch exact-head CI after this checkpoint commit before accepting any slice.
 
 ## Evidence still required before accepting the current slice
 - Exact-head CI executes real checkout/install/test steps and passes on Python 3.10 and 3.12, or equivalent clean-environment evidence is obtained.
-- Deterministic smoke and all regressions, including judge-report escaping, queue idempotency, and execution-trace privacy, execute successfully.
+- Run `python scripts/verify_release.py` from a clean installed environment and preserve its untracked evidence for review.
 - Generated HTML report is opened and visually reviewed at desktop and around 390 px mobile width.
-- Independent diff/scope/privacy/secrets review remains clean. Current tree inspection shows only source/docs/tests/workflow files and no private casting assets or credential files; generated report artifacts are explicitly ignored.
+- Independent diff/scope/privacy/secrets review remains clean. Generated report and release-evidence artifacts must remain untracked.
 - M5 live Bedrock invocation remains explicitly owner-gated and unverified until AWS credentials/model access are intentionally supplied.
 - M6 submission copy must be checked against final current Devpost fields and official rules before public submission.
 - Final video must be recorded from verified release-head behavior and remain within the official duration limit.
@@ -68,7 +69,7 @@ The competition demo must remain reproducible without Xano or paid model calls. 
 - No public competition submission, Builder post, or video publication has been performed.
 
 ## Next highest-leverage work
-1. Obtain executed clean-environment verification as soon as infrastructure permits.
+1. Obtain executed clean-environment verification as soon as infrastructure permits, preferably through `scripts/verify_release.py` so evidence is repeatable.
 2. Generate and visually inspect the judge report at desktop and around 390 px mobile width.
 3. Continue release-candidate privacy/secrets/diff review after every implementation movement.
 4. Confirm Xano idempotency only if that optional backend becomes available; the canonical MemoryBackend path meets issue #3 dedupe acceptance.
