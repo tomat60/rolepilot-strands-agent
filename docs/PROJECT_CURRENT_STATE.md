@@ -1,6 +1,6 @@
 # Project Current State
 
-Updated: 2026-09-04
+Updated: 2026-09-05
 
 ## Mission
 Ship a competition-grade RolePilot Agent for AWS Agents for Humans using the Strands Agents SDK.
@@ -43,10 +43,10 @@ The competition demo must remain reproducible without Xano or paid model calls. 
 
 ## Exact verification state
 - PR #2 remains the only active competition implementation lane.
-- Current implementation head before this checkpoint commit is `81d57fca0fb617e85cca920cb4bb0d857230ea5e`.
-- Last inspected exact-head Actions run before the privacy-hardening commits was `33908378514` at head `cfc1f199554eb015b10302d4fb1a6133ea5796aa`; Python 3.10 was cancelled and 3.12 failed with `runner_id=0` and no workflow steps executed.
-- A separate clean-environment clone attempt at exact head `cfc1f199554eb015b10302d4fb1a6133ea5796aa` also could not begin because the execution environment could not resolve `github.com`. This is not product/test evidence and must not be represented as verification.
-- Treat zero-step failures and DNS bootstrap failure as infrastructure conditions, not executed product/test evidence. Do not blind-rerun them.
+- Exact PR head before this checkpoint commit is `d9243eb2f1ab836f07b4a95d652a3969b2778746`; PR is open, non-draft and mergeable.
+- Exact-head Actions run `33913623494` completed as failure before any workflow step executed. Both Python 3.10 and 3.12 jobs have `runner_id=0` and `steps=[]`; this is infrastructure startup failure, not product/test evidence.
+- A fresh independent clone attempt against exact head `d9243eb2f1ab836f07b4a95d652a3969b2778746` on 2026-09-05 also could not begin because the execution environment could not resolve `github.com`. This is not product/test evidence and must not be represented as verification.
+- Treat zero-step Actions failures and DNS bootstrap failure as infrastructure conditions. Do not blind-rerun them.
 - Refetch exact-head CI after this checkpoint commit before accepting any slice.
 
 ## Evidence still required before accepting the current slice
@@ -58,10 +58,10 @@ The competition demo must remain reproducible without Xano or paid model calls. 
 - M6 submission copy must be checked against final current Devpost fields and official rules before public submission.
 - Final video must be recorded from verified release-head behavior and remain within the official duration limit.
 
-## Current competition authority checked 2026-09-04
+## Current competition authority checked 2026-09-05
 - Official Devpost deadline remains 2026-09-14 17:00 PDT.
 - Promotional-credit requests remain due 2026-09-11 12:00 PT while supplies last.
-- Official submission requirements require a public repository with MIT/Apache license, README, architecture diagram, English submission materials, a public YouTube/Vimeo video of at most five minutes, AWS Builder ID, and free access to a working project/test build through the judging period. A live demo link is optional but can strengthen Technical Implementation.
+- Official submission requirements require a public repository with MIT/Apache license, README, architecture diagram, English submission materials, a public YouTube/Vimeo video of at most five minutes, AWS Builder ID, and free access to a working project/test build through the judging period ending 2026-10-08 17:00 PDT. A live demo link is optional but can strengthen Technical Implementation.
 - Official rules allow standard tools/libraries but require disclosure of other pre-existing work incorporated into the project.
 - Current official Strands documentation continues to support Python custom `@tool` functions and agent-selected tools.
 
