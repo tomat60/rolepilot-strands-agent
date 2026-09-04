@@ -7,6 +7,7 @@ import os
 from .agent import build_agent
 from .backend import MemoryBackend, XanoBackend
 from .judge_report import write_judge_report
+from .live_model import bedrock_settings_from_env, build_bedrock_model
 
 
 def _backend_from_args(args):
@@ -35,6 +36,14 @@ def main() -> None:
         metavar="PATH",
         help="Write a self-contained HTML product report using the deterministic queue path.",
     )
+    parser.add_argument(
+        "--live-bedrock",
+        action="store_true",
+        help=(
+            "Explicitly opt in to a live Amazon Bedrock model invocation. "
+            "This may incur AWS usage cost and requires explicit model/region configuration."
+        ),
+    )
     args = parser.parse_args()
     backend = _backend_from_args(args)
 
@@ -55,7 +64,16 @@ def main() -> None:
         print(json.dumps(summary, indent=2, ensure_ascii=False))
         return
 
-    agent = build_agent(backend)
+    if not args.live_bedrock:
+        raise SystemExit(
+            "Live model execution is disabled by default. Use --deterministic-smoke or "
+            "--judge-report for the free competition-safe path. Use --live-bedrock only "
+            "after AWS access/cost approval and explicit Bedrock model configuration."
+        )
+
+    settings = bedrock_settings_from_env()
+    model = build_bedrock_model(settings)
+    agent = build_agent(backend, model=model)
     result = agent(args.prompt)
     print(result)
 
