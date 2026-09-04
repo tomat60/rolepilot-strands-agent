@@ -30,6 +30,8 @@ The competition demo must remain reproducible without Xano. The in-memory backen
 - Memory backend added for credential-free tests and demos.
 - Queue autonomy prepares every safe READY opportunity, persists the run, and returns only unresolved recording/review decision points; it has no external submission path.
 - Queue-autonomy regression coverage proves only READY is prepared, human approval remains pending, blockers remain surfaced, and external submission remains false.
+- Queue processing now isolates per-opportunity backend/normalization/persistence failures: the affected lane fails closed to `REVIEW`, only the exception class is surfaced, and the remaining queue continues.
+- Regression coverage exercises both analysis failure and prepare/persistence failure, proves no private exception message leaks, and preserves zero external submissions.
 - Optional Xano adapter added for the Sep 3 RolePilot prototype.
 - Xano readiness normalization fails closed on malformed `can_prepare` values and contradictory READY/non-READY state.
 - Safety invariant and Xano adapter regression tests added.
@@ -40,13 +42,13 @@ The competition demo must remain reproducible without Xano. The in-memory backen
 - CLI supports `--judge-report PATH` so judges can generate the product view without credentials, AWS, Xano or paid model calls.
 - Regression coverage asserts the judge report exposes the correct 1 prepared / 2 decision / 0 submission state and preserves the human gate.
 - Independent contract review found a TEST_BUG: M2 and judge-report tests expected `PENDING`, while the domain/backend contract intentionally persists the explicit `PENDING_HUMAN_APPROVAL` state. Tests were corrected to the product contract; the product state was not weakened or renamed to satisfy tests.
-- M4 deterministic readiness matrix coverage now exercises READY, new-recording, manual-review, missing/unapproved asset, combined blocker, and blocker-precedence scenarios. Every non-READY path is asserted fail-closed through `require_preparable`.
+- M4 deterministic readiness matrix coverage exercises READY, new-recording, manual-review, missing/unapproved asset, combined blocker, and blocker-precedence scenarios. Every non-READY path is asserted fail-closed through `require_preparable`.
 
 ## Exact verification state
 - PR #2 remains the only active competition implementation lane.
-- Head `e91795b6111d366c43997639aa8750f19599ef32` produced CI run `33827625718`; Python 3.10 was cancelled and Python 3.12 failed with `runner_id=0` and `steps=[]` before checkout.
-- Readiness-matrix commit `a6ab1250159bf88bf4caabf1b7e33135610ebc2f` produced CI run `33831022487`; both Python 3.10 and 3.12 again completed failure with `runner_id=0` and `steps=[]` before checkout.
-- These runs are classified as GitHub Actions startup infrastructure failure, not executed product/test failures.
+- Previous exact head `787c708e0e6246bea6c8481138bad5f0b80bba2e` produced CI run `33831056605`, which completed failure before useful workflow execution; earlier runs repeatedly showed `runner_id=0` and `steps=[]` before checkout.
+- Current M4 failure-isolation implementation/test head before this state update is `f587e75419d5197bed04d61e427dcf96f9274041`; exact-head workflow evidence is not yet available.
+- These zero-step runs remain classified as GitHub Actions startup infrastructure failure, not executed product/test failures.
 - GitHub-hosted Actions startup remains unverified until a job acquires a runner and executes workflow steps.
 - A prior container clean-check could not clone GitHub because that runtime had no DNS/network access; this is not product evidence and does not satisfy acceptance.
 - Do not blind-rerun zero-step failures.
@@ -54,7 +56,7 @@ The competition demo must remain reproducible without Xano. The in-memory backen
 ## Evidence still required before accepting M0-M4 slice
 - Exact-head CI executes real checkout/install/test steps and passes on both Python versions, or equivalent clean-environment evidence is obtained.
 - Deterministic smoke passes in CI or equivalent clean-environment evidence is obtained.
-- Queue-autonomy, Xano fail-closed, judge-report, approval-state, and readiness-matrix regression tests execute successfully.
+- Queue-autonomy, failure-isolation, Xano fail-closed, judge-report, approval-state, and readiness-matrix regression tests execute successfully.
 - Generated HTML report is opened and visually reviewed at desktop and mobile width.
 - Independent diff/scope review remains clean.
 - No private data or secrets are present.
@@ -67,7 +69,7 @@ The competition demo must remain reproducible without Xano. The in-memory backen
 ## Next highest-leverage work
 1. Obtain executed clean-environment verification for M0-M4 as soon as infrastructure permits.
 2. Visually inspect the generated judge report and tighten mobile hierarchy if needed.
-3. Continue M4 failure handling/evaluation without weakening safety, then prepare the M5 Bedrock owner gate early enough for the competition deadline.
+3. Continue M4 evaluation/failure handling without weakening safety, then prepare the M5 Bedrock owner gate early enough for the competition deadline.
 
 ## Owner-only gates later
 - AWS login/MFA and Bedrock access.
