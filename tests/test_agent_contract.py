@@ -28,7 +28,7 @@ def test_queue_autonomy_prepares_only_ready_and_surfaces_real_decisions():
     assert result["external_submission_performed"] is False
     assert len(result["prepared"]) == 1
     assert result["prepared"][0]["opportunity_id"] == 1
-    assert result["prepared"][0]["run"]["approval_state"] == "PENDING"
+    assert result["prepared"][0]["run"]["approval_state"] == "PENDING_HUMAN_APPROVAL"
 
     decisions = {item["opportunity_id"]: item for item in result["decision_points"]}
     assert decisions[2]["state"] == "NEEDS_RECORDING"
