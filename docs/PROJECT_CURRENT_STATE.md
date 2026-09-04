@@ -8,8 +8,9 @@ Ship a competition-grade RolePilot Agent for AWS Agents for Humans using the Str
 ## Active milestone
 M0-M3 acceptance recovery, bounded M4 reliability, safe M5 live-path preparation, and M6 submission preparation on the same PR while GitHub Actions startup is unavailable.
 
-## Active issue
+## Active issues
 #1 `M0-M1: bootstrap repo and ship first Strands vertical slice`
+#3 `M2: autonomous queue processing and decision surfacing`
 
 ## Active implementation branch
 `agent/m0-m1-strands-vertical-slice`
@@ -28,26 +29,27 @@ The competition demo must remain reproducible without Xano or paid model calls. 
 - Deterministic READY / NEEDS_RECORDING / REVIEW safety gate is independent of model output.
 - MemoryBackend is the credential-free judge-safe path; Xano is optional and fails closed on malformed or contradictory readiness state.
 - Queue autonomy prepares only safe READY opportunities, persists runs/audit events, isolates per-opportunity failures, and returns unresolved recording/review decision points.
+- MemoryBackend preparation is now idempotent for active runs: rerunning the queue reuses the existing PENDING_HUMAN_APPROVAL or APPROVED_DEMO_STATE run instead of creating duplicates. A CHANGES_REQUESTED run permits a fresh preparation run. Regression coverage locks both behaviors.
 - Competition/demo flows contain no external submission tool; human approval changes internal demo state only.
 - M3 judge-facing responsive HTML report is generated from the same deterministic queue/safety path and exposes Discover -> Inspect -> Decide -> Prepare -> Stop, prepared work, decision inbox, approval boundary and zero external submissions.
 - Judge report escapes backend-controlled run id, approval state and audit-event values before HTML rendering. A regression injects HTML/script payloads and asserts they are encoded rather than executable.
-- Generated judge-report artifact names are now ignored by Git and README explicitly warns that reports from external/private backends may contain private opportunity/audit data and must not be committed.
+- Generated judge-report artifact names are ignored by Git and README explicitly warns that reports from external/private backends may contain private opportunity/audit data and must not be committed.
 - M4 readiness matrix covers READY, recording-required, manual-review, missing/unapproved asset, combined blocker and blocker precedence, with fail-closed `require_preparable` assertions.
 - M5 has explicit `--live-bedrock` opt-in plus required model id and region before constructing `BedrockModel`; no live AWS call or paid resource creation has been performed.
 - M6 includes `docs/SUBMISSION_DRAFT.md` and `docs/DEMO_SCRIPT.md`; the video plan stays under five minutes and must not claim live Bedrock until verified.
 
 ## Exact verification state
 - PR #2 remains the only active competition implementation lane.
-- The latest implementation commits add generated-report privacy hardening to `.gitignore` and README; this state checkpoint follows those changes.
+- Latest implementation movement adds report-artifact privacy hardening plus MemoryBackend queue idempotency and retry semantics.
 - The previously inspected exact-head Actions run for `8b7e0d5a44796b8cac8e58b12b523733fde0775e` failed before runner assignment: Python 3.12 had `runner_id=0`, `steps=[]`, Python 3.10 was cancelled with `runner_id=0`, `steps=[]`.
 - Treat zero-step failures as infrastructure startup failures, not executed product/test evidence. Do not blind-rerun them.
 - Refetch exact-head CI after this checkpoint commit before accepting any slice.
 
 ## Evidence still required before accepting the current slice
 - Exact-head CI executes real checkout/install/test steps and passes on Python 3.10 and 3.12, or equivalent clean-environment evidence is obtained.
-- Deterministic smoke and all regressions, including judge-report escaping, execute successfully.
+- Deterministic smoke and all regressions, including judge-report escaping and queue idempotency, execute successfully.
 - Generated HTML report is opened and visually reviewed at desktop and around 390 px mobile width.
-- Independent diff/scope/privacy/secrets review remains clean. Current tree inspection shows only source/docs/tests/workflow files and no private casting assets or credential files; generated report artifacts are now explicitly ignored.
+- Independent diff/scope/privacy/secrets review remains clean. Current tree inspection shows only source/docs/tests/workflow files and no private casting assets or credential files; generated report artifacts are explicitly ignored.
 - M5 live Bedrock invocation remains explicitly owner-gated and unverified until AWS credentials/model access are intentionally supplied.
 - M6 submission copy must be checked against final current Devpost fields and official rules before public submission.
 - Final video must be recorded from verified release-head behavior and remain within the official duration limit.
@@ -68,8 +70,9 @@ The competition demo must remain reproducible without Xano or paid model calls. 
 1. Obtain executed clean-environment verification as soon as infrastructure permits.
 2. Generate and visually inspect the judge report at desktop and around 390 px mobile width.
 3. Continue release-candidate privacy/secrets/diff review after every implementation movement.
-4. Once Paweł intentionally supplies AWS access/model permission, verify one bounded live Strands/Bedrock queue run without creating additional paid infrastructure.
-5. Continue M6 evidence capture and repository hygiene while preserving truthful claims.
+4. Confirm Xano idempotency only if that optional backend becomes available; the canonical MemoryBackend path now meets issue #3 dedupe acceptance.
+5. Once Paweł intentionally supplies AWS access/model permission, verify one bounded live Strands/Bedrock queue run without creating additional paid infrastructure.
+6. Continue M6 evidence capture and repository hygiene while preserving truthful claims.
 
 ## Owner-only gates later
 - AWS login/MFA, credentials, Bedrock model access, promotional-credit request/acceptance.
