@@ -39,12 +39,14 @@ The competition demo must remain reproducible without Xano. The in-memory backen
 - M3 judge-facing product report added: a self-contained responsive HTML view generated from the same deterministic queue/safety path. It shows prepared work, persisted run/audit state, NEEDS_RECORDING/REVIEW decision points, the human approval gate and zero external submissions.
 - CLI supports `--judge-report PATH` so judges can generate the product view without credentials, AWS, Xano or paid model calls.
 - Regression coverage asserts the judge report exposes the correct 1 prepared / 2 decision / 0 submission state and preserves the human gate.
+- Independent contract review found a TEST_BUG: M2 and judge-report tests expected `PENDING`, while the domain/backend contract intentionally persists the explicit `PENDING_HUMAN_APPROVAL` state. Tests were corrected to the product contract; the product state was not weakened or renamed to satisfy tests.
 
 ## Exact verification state
 - PR #2 remains the only active competition implementation lane.
 - Exact head `d0b5e3de4d2af3da448daa49fbbc6abd42b9efe5` produced CI run `33823405767`, which completed failure before test execution; prior runs repeatedly showed `runner_id=0` and `steps=[]` before checkout.
 - GitHub-hosted Actions startup remains classified as infrastructure failure until a job actually acquires a runner and executes workflow steps.
-- M3 judge-report implementation commits were added after that failed head; final exact-head CI state must be refetched after this state commit.
+- A container clean-check attempt could not clone GitHub because that runtime has no DNS/network access; this is not product evidence and does not satisfy acceptance.
+- M3 judge-report and approval-state test-correction commits were added after the last executed head; final exact-head CI state must be refetched.
 - Do not blind-rerun zero-step failures.
 
 ## Evidence still required before accepting M0-M3 slice
