@@ -6,7 +6,7 @@ Updated: 2026-09-04
 Ship a competition-grade RolePilot Agent for AWS Agents for Humans using the Strands Agents SDK.
 
 ## Active milestone
-M0-M1 acceptance recovery plus bounded M2/M3 progress on the same PR while GitHub Actions startup is unavailable.
+M0-M3 acceptance recovery plus bounded M4 reliability progress on the same PR while GitHub Actions startup is unavailable.
 
 ## Active issue
 #1 `M0-M1: bootstrap repo and ship first Strands vertical slice`
@@ -40,19 +40,21 @@ The competition demo must remain reproducible without Xano. The in-memory backen
 - CLI supports `--judge-report PATH` so judges can generate the product view without credentials, AWS, Xano or paid model calls.
 - Regression coverage asserts the judge report exposes the correct 1 prepared / 2 decision / 0 submission state and preserves the human gate.
 - Independent contract review found a TEST_BUG: M2 and judge-report tests expected `PENDING`, while the domain/backend contract intentionally persists the explicit `PENDING_HUMAN_APPROVAL` state. Tests were corrected to the product contract; the product state was not weakened or renamed to satisfy tests.
+- M4 deterministic readiness matrix coverage now exercises READY, new-recording, manual-review, missing/unapproved asset, combined blocker, and blocker-precedence scenarios. Every non-READY path is asserted fail-closed through `require_preparable`.
 
 ## Exact verification state
 - PR #2 remains the only active competition implementation lane.
-- Exact head `d0b5e3de4d2af3da448daa49fbbc6abd42b9efe5` produced CI run `33823405767`, which completed failure before test execution; prior runs repeatedly showed `runner_id=0` and `steps=[]` before checkout.
-- GitHub-hosted Actions startup remains classified as infrastructure failure until a job actually acquires a runner and executes workflow steps.
-- A container clean-check attempt could not clone GitHub because that runtime has no DNS/network access; this is not product evidence and does not satisfy acceptance.
-- M3 judge-report and approval-state test-correction commits were added after the last executed head; final exact-head CI state must be refetched.
+- Head `e91795b6111d366c43997639aa8750f19599ef32` produced CI run `33827625718`; Python 3.10 was cancelled and Python 3.12 failed with `runner_id=0` and `steps=[]` before checkout.
+- Readiness-matrix commit `a6ab1250159bf88bf4caabf1b7e33135610ebc2f` produced CI run `33831022487`; both Python 3.10 and 3.12 again completed failure with `runner_id=0` and `steps=[]` before checkout.
+- These runs are classified as GitHub Actions startup infrastructure failure, not executed product/test failures.
+- GitHub-hosted Actions startup remains unverified until a job acquires a runner and executes workflow steps.
+- A prior container clean-check could not clone GitHub because that runtime had no DNS/network access; this is not product evidence and does not satisfy acceptance.
 - Do not blind-rerun zero-step failures.
 
-## Evidence still required before accepting M0-M3 slice
+## Evidence still required before accepting M0-M4 slice
 - Exact-head CI executes real checkout/install/test steps and passes on both Python versions, or equivalent clean-environment evidence is obtained.
 - Deterministic smoke passes in CI or equivalent clean-environment evidence is obtained.
-- Queue-autonomy, Xano fail-closed and judge-report regression tests execute successfully.
+- Queue-autonomy, Xano fail-closed, judge-report, approval-state, and readiness-matrix regression tests execute successfully.
 - Generated HTML report is opened and visually reviewed at desktop and mobile width.
 - Independent diff/scope review remains clean.
 - No private data or secrets are present.
@@ -63,9 +65,9 @@ The competition demo must remain reproducible without Xano. The in-memory backen
 - No AWS spend or paid resource creation is authorized.
 
 ## Next highest-leverage work
-1. Obtain executed clean-environment verification for M0-M3 as soon as infrastructure permits.
+1. Obtain executed clean-environment verification for M0-M4 as soon as infrastructure permits.
 2. Visually inspect the generated judge report and tighten mobile hierarchy if needed.
-3. Then move to M4 reliability/evaluation or M5 Bedrock live path depending on owner AWS readiness.
+3. Continue M4 failure handling/evaluation without weakening safety, then prepare the M5 Bedrock owner gate early enough for the competition deadline.
 
 ## Owner-only gates later
 - AWS login/MFA and Bedrock access.
