@@ -15,13 +15,14 @@ The agent may inspect opportunities, analyze readiness, prepare an application r
 ## What is implemented
 
 - Python 3.10+ project using `strands-agents`
-- Strands `Agent` orchestration with four custom product tools
+- Strands `Agent` orchestration with custom product tools, including full-queue processing
 - deterministic safety gate independent of model output
 - competition-safe in-memory backend for tests and offline smoke runs
 - optional Xano adapter for the RolePilot prototype created on 2026-09-03
 - READY, NEEDS_RECORDING, and REVIEW scenarios
 - persisted demo application runs and audit events
 - explicit human approval state with no external submission tool
+- judge-facing deterministic HTML report
 - CI for Python 3.10 and 3.12
 
 ## Architecture
@@ -50,15 +51,30 @@ Run the deterministic competition-safe smoke test without AWS credentials, Xano,
 rolepilot-agent --deterministic-smoke
 ```
 
-The in-memory backend is the canonical judge-safe path and requires no external service. This keeps the competition demo reproducible even when optional integrations are unavailable.
-
-Run the real Strands agent with the default Strands model provider:
+Generate the self-contained judge report without AWS credentials or paid model calls:
 
 ```bash
-rolepilot-agent "Process my casting opportunity queue."
+rolepilot-agent --judge-report rolepilot-report.html
 ```
 
-The Strands Python SDK uses Amazon Bedrock by default. A live invocation therefore requires suitable AWS credentials and model access. The deterministic test suite and smoke path do not.
+The in-memory backend is the canonical judge-safe path and requires no external service. This keeps the competition demo reproducible even when optional integrations are unavailable.
+
+## Optional live Amazon Bedrock path
+
+The Strands Python SDK supports Amazon Bedrock as its default model provider, but RolePilot deliberately does **not** invoke a live model merely because the CLI was started. A Bedrock invocation may incur AWS usage cost, so live execution requires an explicit CLI opt-in plus an explicit model and region.
+
+After AWS access and cost approval, configure the chosen model and region:
+
+```bash
+export ROLEPILOT_BEDROCK_MODEL_ID="YOUR_APPROVED_MODEL_ID"
+export ROLEPILOT_BEDROCK_REGION="YOUR_APPROVED_REGION"
+rolepilot-agent --live-bedrock "Process my casting opportunity queue."
+```
+
+`AWS_REGION` or `AWS_DEFAULT_REGION` may be used instead of `ROLEPILOT_BEDROCK_REGION`. AWS credentials continue to use the standard AWS credential chain. The live path does not create resources, enable model access, alter quotas, or perform external casting submissions.
+
+Current Strands Bedrock provider documentation:
+https://strandsagents.com/docs/user-guide/concepts/model-providers/amazon-bedrock/
 
 ## Optional Xano integration
 
@@ -85,6 +101,7 @@ A separate RolePilot/Xano prototype was created on 2026-09-03 during the competi
 
 - Python quickstart: https://strandsagents.com/docs/user-guide/quickstart/python/
 - Custom tools: https://strandsagents.com/docs/user-guide/concepts/tools/custom-tools/
+- Amazon Bedrock provider: https://strandsagents.com/docs/user-guide/concepts/model-providers/amazon-bedrock/
 
 ## License
 
