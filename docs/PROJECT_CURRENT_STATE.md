@@ -35,16 +35,18 @@ The competition demo must remain reproducible without Xano or paid model calls. 
 - M3 judge-facing responsive HTML report is generated from the same deterministic queue/safety path and exposes Discover -> Inspect -> Decide -> Prepare -> Stop, prepared work, decision inbox, approval boundary and zero external submissions.
 - Judge report escapes backend-controlled run id, approval state and audit-event values before HTML rendering.
 - Generated judge-report artifact names are ignored by Git and README warns that reports from external/private backends may contain private opportunity/audit data and must not be committed.
+- Optional Xano HTTP failures are privacy-redacted at the adapter boundary: remote error bodies are no longer propagated into public-facing exception text, with a regression asserting private body content is absent.
 - M4 readiness matrix covers READY, recording-required, manual-review, missing/unapproved asset, combined blocker and blocker precedence, with fail-closed `require_preparable` assertions.
 - M4/M6 include `scripts/verify_release.py`, a credential-free release verifier that runs pytest, deterministic smoke and judge-report generation and records exact SHA/Python/command evidence in an ignored `release-evidence/` directory. Manual desktop/mobile visual review and live Bedrock remain explicitly pending instead of being auto-claimed.
 - M5 has explicit `--live-bedrock` opt-in plus required model id and region before constructing `BedrockModel`; no live AWS call or paid resource creation has been performed.
-- M6 includes `docs/SUBMISSION_DRAFT.md`, `docs/DEMO_SCRIPT.md`, `docs/VERIFICATION.md`, and `docs/JUDGE_TESTING.md`. The new judge-testing guide provides an English, free, credential-free install/test path, expected observable behavior, safety expectations, and optional-integration boundaries required for judging/testing. README links directly to it.
+- M6 includes `docs/SUBMISSION_DRAFT.md`, `docs/DEMO_SCRIPT.md`, `docs/VERIFICATION.md`, and `docs/JUDGE_TESTING.md`. The judge-testing guide provides an English, free, credential-free install/test path, expected observable behavior, safety expectations, and optional-integration boundaries required for judging/testing. README links directly to it.
 
 ## Exact verification state
 - PR #2 remains the only active competition implementation lane.
-- Current implementation head before this checkpoint commit is `2f7bc3ec455ccf4342f6a4a03a115e5457239ed8`.
-- Last inspected exact-head Actions run before this documentation slice was `33891928541` at head `947b4206bbfbf341ad4b6e96daa12829cd50874b`; it failed before any workflow steps executed.
-- Treat zero-step failures as infrastructure startup failures, not executed product/test evidence. Do not blind-rerun them.
+- Current implementation head before this checkpoint commit is `81d57fca0fb617e85cca920cb4bb0d857230ea5e`.
+- Last inspected exact-head Actions run before the privacy-hardening commits was `33908378514` at head `cfc1f199554eb015b10302d4fb1a6133ea5796aa`; Python 3.10 was cancelled and 3.12 failed with `runner_id=0` and no workflow steps executed.
+- A separate clean-environment clone attempt at exact head `cfc1f199554eb015b10302d4fb1a6133ea5796aa` also could not begin because the execution environment could not resolve `github.com`. This is not product/test evidence and must not be represented as verification.
+- Treat zero-step failures and DNS bootstrap failure as infrastructure conditions, not executed product/test evidence. Do not blind-rerun them.
 - Refetch exact-head CI after this checkpoint commit before accepting any slice.
 
 ## Evidence still required before accepting the current slice
