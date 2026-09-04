@@ -67,9 +67,21 @@ class MemoryBackend:
     def analyze(self, opportunity_id: int) -> dict:
         return self._analysis(opportunity_id).to_dict()
 
+    def _find_active_run(self, opportunity_id: int) -> ApplicationRun | None:
+        active_states = {"PENDING_HUMAN_APPROVAL", "APPROVED_DEMO_STATE"}
+        for run in self.runs.values():
+            if run.opportunity_id == opportunity_id and run.approval_state in active_states:
+                return run
+        return None
+
     def create_run(self, opportunity_id: int) -> dict:
         result = self._analysis(opportunity_id)
         require_preparable(result)
+
+        existing = self._find_active_run(opportunity_id)
+        if existing is not None:
+            return existing.to_dict()
+
         run = ApplicationRun(
             id=self._next_run_id,
             opportunity_id=opportunity_id,
