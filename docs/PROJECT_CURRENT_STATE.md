@@ -32,16 +32,18 @@ The canonical competition demo must remain reproducible without Xano or paid mod
 - Optional Xano errors and malformed readiness/can-prepare combinations fail closed and redact remote error bodies.
 - Xano `/opportunities` is treated as untrusted and normalized to only numeric id plus bounded title/brand display fields; arbitrary backend fields are discarded before reaching Strands tools.
 - Xano `/analyze` is treated as untrusted and normalized to canonical opportunity_id/readiness/state/can_prepare/reasons fields only. Remote reason text and arbitrary extra fields are discarded, opportunity-id mismatches fail closed, and readiness outside 0-100 fails closed.
+- Xano readiness can no longer become READY from incomplete remote signals: missing `can_prepare`, missing/malformed `state`, contradictory state, or READY below the required readiness threshold all fail closed to REVIEW.
 - Xano `/runs` and `/approval` responses are treated as untrusted: arbitrary backend fields, remote audit text and any remote `external_submission_performed` value are discarded. Only canonical run identifiers/state plus locally generated public-safe audit events are returned. Inconsistent run/opportunity identifiers fail closed.
-- Regression coverage injects private-like fields into Xano list/analyze/run/approval responses and requires them not to escape the adapter.
+- Regression coverage injects private-like fields into Xano list/analyze/run/approval responses and covers incomplete readiness signals so an untrusted backend cannot implicitly promote work to READY.
 - `scripts/verify_release.py` provides credential-free pytest + deterministic smoke + judge-report evidence capture under ignored `release-evidence/`.
 - Live Bedrock is explicit opt-in and requires model id + region before model construction. No AWS spend or live model invocation has been performed.
 - M6 docs include architecture, judge testing, verification, submission draft and sub-five-minute demo script.
 
 ## Exact verification state
-- PR #2 exact head before this checkpoint was `4b94db813b290ffca02aea47de43b963115ccb13`, after implementation commit `4d102bfdcdfde6f1b7978725e5000d23d0b6a402` and privacy-boundary regression commit `4b94db813b290ffca02aea47de43b963115ccb13`.
-- Previous exact-head CI run `33964415313` on `f9e41fb226ec0f21c5c4e9db9cc573a5f2b04579` completed as failure before usable test evidence; do not treat it as product verification.
-- No successful clean-environment execution evidence exists yet for the latest Xano privacy-boundary slice. Do not infer success from source review or mergeability.
+- PR #2 exact head before this checkpoint was `3494b5a3fd3d7e749b834fb2e49f6911bd599118`, after implementation commit `a2a4a5b6ca143aea92d761f0f280774d1f11b04d` and regression commit `3494b5a3fd3d7e749b834fb2e49f6911bd599118`.
+- Exact-head CI run `33976243834` on `3494b5a3fd3d7e749b834fb2e49f6911bd599118` again failed before runner assignment: Python 3.10 failure and Python 3.12 cancelled, both `runner_id=0` with `steps=[]`. Do not treat it as product verification.
+- A fresh independent clean clone attempt from the execution environment also failed before checkout because DNS could not resolve `github.com`; this is transient environment/network evidence, not a product test result.
+- No successful clean-environment execution evidence exists yet for the latest Xano readiness-hardening slice. Do not infer success from source review or mergeability.
 - Refetch exact PR head, mergeability and exact-head CI after this checkpoint commit.
 - Do not blind-rerun zero-step Actions failures.
 
