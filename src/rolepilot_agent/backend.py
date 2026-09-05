@@ -143,6 +143,15 @@ class XanoBackend:
         except (TypeError, ValueError) as exc:
             raise RuntimeError(f"Xano returned malformed {field_name}") from exc
 
+    @staticmethod
+    def _safe_display_text(value, field_name: str) -> str:
+        if not isinstance(value, str):
+            raise RuntimeError(f"Xano returned malformed {field_name}")
+        text = value.strip()
+        if not text or len(text) > 200:
+            raise RuntimeError(f"Xano returned malformed {field_name}")
+        return text
+
     @classmethod
     def _normalize_run_response(
         cls,
@@ -201,24 +210,48 @@ class XanoBackend:
         }
 
     def list_opportunities(self) -> list[dict]:
-        return self._request("GET", "/opportunities")
+        response = self._request("GET", "/opportunities")
+        if not isinstance(response, list):
+            raise RuntimeError("Xano returned malformed opportunities response")
+
+        normalized: list[dict] = []
+        for item in response:
+            if not isinstance(item, dict):
+                raise RuntimeError("Xano returned malformed opportunity")
+            normalized.append(
+                {
+                    "id": self._safe_int(item.get("id"), "opportunity id"),
+                    "title": self._safe_display_text(item.get("title"), "opportunity title"),
+                    "brand": self._safe_display_text(item.get("brand"), "opportunity brand"),
+                }
+            )
+        return normalized
 
     def analyze(self, opportunity_id: int) -> dict:
         result = self._request("POST", "/analyze", {"opportunity_id": opportunity_id})
+        if not isinstance(result, dict):
+            raise RuntimeError("Xano returned malformed analysis response")
 
+        remote_opportunity_id = self._safe_int(
+            result.get("opportunity_id", opportunity_id), "opportunity id"
+        )
+        if remote_opportunity_id != opportunity_id:
+            raise RuntimeError("Xano returned inconsistent opportunity id")
+
+        safety_warning: str | None = None
         raw_readiness = result.get("readiness", 0)
         if isinstance(raw_readiness, bool):
             readiness = 0
-            result["safety_warning"] = "malformed_readiness"
+            safety_warning = "malformed_readiness"
         else:
             try:
                 readiness = int(raw_readiness)
             except (TypeError, ValueError):
-                # Fail closed without surfacing the malformed backend value. Backend
-                # payloads can contain private casting/profile data and exception text
-                # must not become an accidental disclosure channel.
                 readiness = 0
-                result["safety_warning"] = "malformed_readiness"
+                safety_warning = "malformed_readiness"
+        if readiness < 0 or readiness > 100:
+            readiness = 0
+            safety_warning = "malformed_readiness"
 
         raw_can_prepare = result.get("can_prepare")
         if raw_can_prepare is None:
@@ -226,21 +259,18 @@ class XanoBackend:
         elif isinstance(raw_can_prepare, bool):
             can_prepare = raw_can_prepare
         else:
-            # Fail closed on malformed remote truth. In particular, bool("false")
-            # would incorrectly evaluate to True and could bypass the safety gate.
             can_prepare = False
-            result["safety_warning"] = "malformed_can_prepare"
+            safety_warning = "malformed_can_prepare"
 
         raw_state = result.get("state")
         valid_states = {item.value for item in ReadinessState}
 
-        if result.get("safety_warning") == "malformed_readiness":
+        if safety_warning == "malformed_readiness":
             can_prepare = False
 
         if can_prepare and raw_state not in (None, "READY"):
-            # A contradictory backend response must never be normalized upward.
             can_prepare = False
-            result["safety_warning"] = "inconsistent_ready_state"
+            safety_warning = "inconsistent_ready_state"
 
         if can_prepare:
             state = "READY"
@@ -249,10 +279,25 @@ class XanoBackend:
         else:
             state = "REVIEW"
 
-        result["readiness"] = readiness
-        result["state"] = state
-        result["can_prepare"] = can_prepare
-        return result
+        if safety_warning is not None:
+            reasons = [safety_warning]
+        elif state == "NEEDS_RECORDING":
+            reasons = ["new_recording_required"]
+        elif state == "REVIEW":
+            reasons = ["manual_review_required"]
+        else:
+            reasons = ["ready_for_preparation"]
+
+        normalized = {
+            "opportunity_id": opportunity_id,
+            "readiness": readiness,
+            "state": state,
+            "can_prepare": can_prepare,
+            "reasons": reasons,
+        }
+        if safety_warning is not None:
+            normalized["safety_warning"] = safety_warning
+        return normalized
 
     def create_run(self, opportunity_id: int) -> dict:
         analysis = self.analyze(opportunity_id)
