@@ -26,6 +26,7 @@ The canonical competition demo must remain reproducible without Xano or paid mod
 - Queue autonomy prepares only safe READY items, persists runs/audit events, isolates per-opportunity failures, and surfaces unresolved decision points.
 - Queue processing normalizes non-canonical backend analysis `state` to fail-closed `REVIEW`; malformed state text is not echoed into decision output or execution trace.
 - Malformed opportunity identifiers fail closed without echoing raw backend values.
+- Malformed non-dictionary queue items now fail closed as isolated REVIEW lanes without echoing the raw item, and later valid opportunities continue processing.
 - MemoryBackend preparation is idempotent for active runs; CHANGES_REQUESTED permits a fresh preparation run.
 - Competition/demo flows contain no external submission tool; approval updates internal demo state only.
 - Responsive judge HTML report is generated from the same deterministic queue/safety path and escapes backend-controlled HTML values.
@@ -40,10 +41,10 @@ The canonical competition demo must remain reproducible without Xano or paid mod
 - M6 docs include architecture, judge testing, verification, submission draft and sub-five-minute demo script.
 
 ## Exact verification state
-- PR #2 exact head before this checkpoint was `3494b5a3fd3d7e749b834fb2e49f6911bd599118`, after implementation commit `a2a4a5b6ca143aea92d761f0f280774d1f11b04d` and regression commit `3494b5a3fd3d7e749b834fb2e49f6911bd599118`.
-- Exact-head CI run `33976243834` on `3494b5a3fd3d7e749b834fb2e49f6911bd599118` again failed before runner assignment: Python 3.10 failure and Python 3.12 cancelled, both `runner_id=0` with `steps=[]`. Do not treat it as product verification.
-- A fresh independent clean clone attempt from the execution environment also failed before checkout because DNS could not resolve `github.com`; this is transient environment/network evidence, not a product test result.
-- No successful clean-environment execution evidence exists yet for the latest Xano readiness-hardening slice. Do not infer success from source review or mergeability.
+- PR #2 implementation head before this checkpoint is `e078863baf58641f2d2406fef112d09ae0a7fe94` after malformed queue-item isolation and its regression test.
+- The preceding exact-head CI run `33976272545` on `7534354b636135133512a0d3efd4750f5b9435e6` again failed before runner assignment; both Python jobs exposed no steps. Do not treat it as product verification.
+- A fresh independent clean clone attempt from the execution environment on 2026-09-05 again failed before checkout because DNS could not resolve `github.com`; this is transient environment/network evidence, not a product test result.
+- The latest queue-item hardening was source-reviewed and regression coverage was added, but no successful clean-environment execution evidence exists yet for that latest slice. Do not infer success from source review or mergeability.
 - Refetch exact PR head, mergeability and exact-head CI after this checkpoint commit.
 - Do not blind-rerun zero-step Actions failures.
 
