@@ -129,3 +129,25 @@ def test_prepare_failure_becomes_review_and_queue_continues():
     assert decisions[2]["state"] == "NEEDS_RECORDING"
     assert decisions[3]["state"] == "REVIEW"
     assert backend.runs == {}
+
+
+def test_malformed_opportunity_id_fails_closed_without_echoing_private_value():
+    private_identifier = "private-user@example.com"
+
+    class MalformedIdBackend(MemoryBackend):
+        def list_opportunities(self) -> list[dict]:
+            return [{"id": private_identifier, "title": "Synthetic malformed opportunity"}]
+
+    result = process_queue_safely(MalformedIdBackend())
+
+    assert result["external_submission_performed"] is False
+    assert result["prepared"] == []
+    assert result["decision_points"] == [
+        {
+            "opportunity_id": None,
+            "title": "Synthetic malformed opportunity",
+            "state": "REVIEW",
+            "reasons": ["processing_error:ValueError"],
+        }
+    ]
+    assert private_identifier not in str(result)
