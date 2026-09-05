@@ -26,6 +26,7 @@ The competition demo must remain reproducible without Xano or paid model calls. 
 ## Current implementation
 - Python project metadata and MIT license added.
 - Strands `Agent` orchestration with five custom product tools exists, including autonomous full-queue processing.
+- The architecture diagram and tool contract now explicitly include `process_casting_queue`, matching the implemented five-tool Strands surface and the batch-delegation product thesis.
 - Deterministic READY / NEEDS_RECORDING / REVIEW safety gate is independent of model output.
 - MemoryBackend is the credential-free judge-safe path; Xano is optional and fails closed on malformed or contradictory readiness state.
 - Queue autonomy prepares only safe READY opportunities, persists runs/audit events, isolates per-opportunity failures, and returns unresolved recording/review decision points.
@@ -45,11 +46,11 @@ The competition demo must remain reproducible without Xano or paid model calls. 
 
 ## Exact verification state
 - PR #2 remains the only active competition implementation lane.
-- Immediately before this checkpoint movement, exact PR head was `a41a97e341e4ce87dccc7a1288bd3692453e170a`; PR was open, non-draft and `mergeable=true`.
-- The latest fully inspected executed CI evidence is run `33937429593` on prior head `4953ce002efbb450b8bbf2b2b8af84815126f2d5`; it failed before any workflow step executed and is infrastructure startup failure, not product/test evidence.
-- Immediately before this checkpoint movement there was no workflow run yet for head `a41a97e341e4ce87dccc7a1288bd3692453e170a`; refetch exact-head CI after this checkpoint commit.
-- No successful clean-environment execution evidence exists yet for the malformed-readiness or malformed-identifier hardening commits. Do not infer success from mergeability or source review.
-- A fresh independent clone attempt on 2026-09-05 again could not begin because the execution environment could not resolve `github.com`. This is not product/test evidence and must not be represented as verification.
+- Immediately before this checkpoint movement, exact PR head was `a3bdace5114b43220a6f254abe62fb5adba8895a`; PR was open, non-draft and mergeable before the architecture-doc alignment commit.
+- The latest fully inspected executed CI evidence is run `33942883349` on prior head `e6380f162f9ab3b83337fd7c48603f1c51c262fd`; Python 3.10 failed and Python 3.12 was cancelled with `runner_id=0` and `steps=[]`, so no checkout/install/test step executed. This is infrastructure startup failure, not product/test evidence.
+- A fresh independent clean-clone attempt on 2026-09-05 06:49 Europe/Warsaw again could not begin because the execution environment could not resolve `github.com`. This is not product/test evidence and must not be represented as verification.
+- No successful clean-environment execution evidence exists yet for the malformed-readiness, malformed-identifier, or architecture-alignment commits. Do not infer success from mergeability or source review.
+- Refetch exact PR head, mergeability and exact-head CI after this checkpoint commit.
 - Treat zero-step Actions failures and DNS bootstrap failure as infrastructure conditions. Do not blind-rerun them.
 
 ## Evidence still required before accepting the current slice
