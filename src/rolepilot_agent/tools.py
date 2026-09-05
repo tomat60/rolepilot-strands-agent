@@ -14,15 +14,44 @@ def process_queue_safely(backend: Backend) -> dict:
     This deterministic orchestration is intentionally safe to run without a model:
     every opportunity is analyzed, READY items are prepared, and all other items
     are surfaced as decision points. A failure on one opportunity fails that lane
-    closed to REVIEW without stopping the rest of the queue. The returned execution
-    trace makes the work performed auditable without exposing private exception text
-    or malformed backend identifiers. No external action is available here.
+    closed to REVIEW without stopping the rest of the queue. A queue-discovery
+    failure fails the whole run closed without exposing backend/private error text.
+    The returned execution trace makes the work performed auditable without exposing
+    private exception text or malformed backend identifiers. No external action is
+    available here.
     """
     prepared: list[dict] = []
     decisions: list[dict] = []
     execution_trace: list[dict] = []
 
-    opportunities = backend.list_opportunities()
+    try:
+        opportunities = backend.list_opportunities()
+        if not isinstance(opportunities, list):
+            raise TypeError("Malformed opportunities response")
+    except Exception as exc:
+        safe_error = f"queue_discovery_error:{type(exc).__name__}"
+        decisions.append(
+            {
+                "opportunity_id": None,
+                "title": None,
+                "state": "REVIEW",
+                "reasons": [safe_error],
+            }
+        )
+        execution_trace.append(
+            {
+                "action": "list_opportunities",
+                "outcome": "REVIEW",
+                "reason": safe_error,
+            }
+        )
+        return {
+            "prepared": prepared,
+            "decision_points": decisions,
+            "execution_trace": execution_trace,
+            "external_submission_performed": False,
+        }
+
     execution_trace.append(
         {
             "action": "list_opportunities",
@@ -43,6 +72,8 @@ def process_queue_safely(backend: Backend) -> dict:
                 raise TypeError("Malformed opportunity id")
             opportunity_id = int(raw_opportunity_id)
             analysis = backend.analyze(opportunity_id)
+            if not isinstance(analysis, dict):
+                raise TypeError("Malformed analysis response")
             raw_state = analysis.get("state", "REVIEW")
             state = raw_state if raw_state in CANONICAL_READINESS_STATES else "REVIEW"
             malformed_state = state == "REVIEW" and raw_state not in CANONICAL_READINESS_STATES
@@ -155,9 +186,9 @@ def build_tools(backend: Backend):
         """Process every available opportunity and return only prepared work and real decision points.
 
         READY opportunities are prepared and persisted. NEEDS_RECORDING, REVIEW,
-        malformed backend analysis state, malformed queue items, and per-opportunity
-        processing failures are surfaced without preparation. The result includes a
-        deterministic execution trace for auditability. This tool cannot submit externally.
+        queue-discovery failures, malformed backend analysis state, malformed queue items,
+        and per-opportunity processing failures are surfaced without preparation. The result
+        includes a deterministic execution trace for auditability. This tool cannot submit externally.
         """
         return process_queue_safely(backend)
 
