@@ -139,7 +139,20 @@ class XanoBackend:
 
     def analyze(self, opportunity_id: int) -> dict:
         result = self._request("POST", "/analyze", {"opportunity_id": opportunity_id})
-        readiness = int(result.get("readiness", 0))
+
+        raw_readiness = result.get("readiness", 0)
+        if isinstance(raw_readiness, bool):
+            readiness = 0
+            result["safety_warning"] = "malformed_readiness"
+        else:
+            try:
+                readiness = int(raw_readiness)
+            except (TypeError, ValueError):
+                # Fail closed without surfacing the malformed backend value. Backend
+                # payloads can contain private casting/profile data and exception text
+                # must not become an accidental disclosure channel.
+                readiness = 0
+                result["safety_warning"] = "malformed_readiness"
 
         raw_can_prepare = result.get("can_prepare")
         if raw_can_prepare is None:
@@ -155,6 +168,9 @@ class XanoBackend:
         raw_state = result.get("state")
         valid_states = {item.value for item in ReadinessState}
 
+        if result.get("safety_warning") == "malformed_readiness":
+            can_prepare = False
+
         if can_prepare and raw_state not in (None, "READY"):
             # A contradictory backend response must never be normalized upward.
             can_prepare = False
@@ -167,6 +183,7 @@ class XanoBackend:
         else:
             state = "REVIEW"
 
+        result["readiness"] = readiness
         result["state"] = state
         result["can_prepare"] = can_prepare
         return result
