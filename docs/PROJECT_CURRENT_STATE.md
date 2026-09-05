@@ -36,6 +36,7 @@ The competition demo must remain reproducible without Xano or paid model calls. 
 - Judge report escapes backend-controlled run id, approval state and audit-event values before HTML rendering.
 - Generated judge-report artifact names are ignored by Git and README warns that reports from external/private backends may contain private opportunity/audit data and must not be committed.
 - Optional Xano HTTP failures are privacy-redacted at the adapter boundary: remote error bodies are no longer propagated into public-facing exception text, with a regression asserting private body content is absent.
+- Optional Xano readiness normalization now treats malformed and boolean readiness values as fail-closed REVIEW state, normalizes readiness to 0, and avoids surfacing malformed backend values through conversion exceptions. Regressions cover malformed private-like readiness content and boolean readiness.
 - M4 readiness matrix covers READY, recording-required, manual-review, missing/unapproved asset, combined blocker and blocker precedence, with fail-closed `require_preparable` assertions.
 - M4/M6 include `scripts/verify_release.py`, a credential-free release verifier that runs pytest, deterministic smoke and judge-report generation and records exact SHA/Python/command evidence in an ignored `release-evidence/` directory. Manual desktop/mobile visual review and live Bedrock remain explicitly pending instead of being auto-claimed.
 - M5 has explicit `--live-bedrock` opt-in plus required model id and region before constructing `BedrockModel`; no live AWS call or paid resource creation has been performed.
@@ -43,11 +44,11 @@ The competition demo must remain reproducible without Xano or paid model calls. 
 
 ## Exact verification state
 - PR #2 remains the only active competition implementation lane.
-- Exact PR head verified before this checkpoint commit was `41e58c39622f6dc6011910ca948b819bb2785fe4`; PR was open and non-draft.
-- Exact-head Actions run `33931155163` completed as failure before any workflow step executed. The run is therefore infrastructure startup failure, not product/test evidence.
-- A fresh independent clone attempt against exact head `41e58c39622f6dc6011910ca948b819bb2785fe4` on 2026-09-05 also could not begin because the execution environment could not resolve `github.com`. This is not product/test evidence and must not be represented as verification.
+- Exact PR head verified immediately before this checkpoint commit was `6e5283205f68bf4fe6f3b6bd1b7eb29128324f24`; PR remained open, non-draft and mergeable before the new checkpoint movement.
+- The last fully inspected CI evidence before this movement was run `33934425217` on prior head `40ca00cb60509b34d2ade13a8cba40042d9fc858`; it failed before any workflow step executed and is infrastructure startup failure, not product/test evidence.
+- No successful clean-environment execution evidence exists yet for the malformed-readiness hardening commits. Refetch exact-head CI after this checkpoint movement; do not infer success from mergeability or source review.
+- A fresh independent clone attempt earlier on 2026-09-05 could not begin because the execution environment could not resolve `github.com`. This is not product/test evidence and must not be represented as verification.
 - Treat zero-step Actions failures and DNS bootstrap failure as infrastructure conditions. Do not blind-rerun them.
-- Refetch PR head, mergeability and exact-head CI after this checkpoint commit before accepting any slice.
 
 ## Evidence still required before accepting the current slice
 - Exact-head CI executes real checkout/install/test steps and passes on Python 3.10 and 3.12, or equivalent clean-environment evidence is obtained.
