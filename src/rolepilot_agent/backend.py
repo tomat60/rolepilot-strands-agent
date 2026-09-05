@@ -255,7 +255,9 @@ class XanoBackend:
 
         raw_can_prepare = result.get("can_prepare")
         if raw_can_prepare is None:
-            can_prepare = readiness >= 90
+            can_prepare = False
+            if safety_warning is None:
+                safety_warning = "missing_can_prepare"
         elif isinstance(raw_can_prepare, bool):
             can_prepare = raw_can_prepare
         else:
@@ -265,12 +267,25 @@ class XanoBackend:
         raw_state = result.get("state")
         valid_states = {item.value for item in ReadinessState}
 
+        if raw_state is None:
+            can_prepare = False
+            if safety_warning is None:
+                safety_warning = "missing_state"
+        elif raw_state not in valid_states:
+            can_prepare = False
+            if safety_warning is None:
+                safety_warning = "malformed_state"
+
         if safety_warning == "malformed_readiness":
             can_prepare = False
 
-        if can_prepare and raw_state not in (None, "READY"):
+        if can_prepare and raw_state != "READY":
             can_prepare = False
             safety_warning = "inconsistent_ready_state"
+
+        if can_prepare and readiness < 90:
+            can_prepare = False
+            safety_warning = "insufficient_readiness"
 
         if can_prepare:
             state = "READY"
