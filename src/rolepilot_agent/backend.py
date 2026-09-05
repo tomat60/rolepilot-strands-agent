@@ -169,7 +169,11 @@ class XanoBackend:
         if not isinstance(raw_run, dict):
             raise RuntimeError("Xano returned malformed run response")
 
-        run_id = cls._safe_int(raw_run.get("id", expected_run_id), "run id")
+        # An approval response must explicitly prove which persisted run was updated.
+        # Never synthesize success from the requested run id when the backend omits it.
+        if expected_run_id is not None and "id" not in raw_run:
+            raise RuntimeError("Xano returned malformed run id")
+        run_id = cls._safe_int(raw_run.get("id"), "run id")
         if expected_run_id is not None and run_id != expected_run_id:
             raise RuntimeError("Xano returned inconsistent run id")
 
