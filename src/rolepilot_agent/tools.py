@@ -39,6 +39,8 @@ def process_queue_safely(backend: Backend) -> dict:
                 raise TypeError("Malformed opportunity item")
             title = opportunity.get("title")
             raw_opportunity_id = opportunity.get("id")
+            if isinstance(raw_opportunity_id, bool):
+                raise TypeError("Malformed opportunity id")
             opportunity_id = int(raw_opportunity_id)
             analysis = backend.analyze(opportunity_id)
             raw_state = analysis.get("state", "REVIEW")
