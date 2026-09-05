@@ -43,11 +43,11 @@ The competition demo must remain reproducible without Xano or paid model calls. 
 
 ## Exact verification state
 - PR #2 remains the only active competition implementation lane.
-- Exact PR head before this checkpoint commit is `d9243eb2f1ab836f07b4a95d652a3969b2778746`; PR is open, non-draft and mergeable.
-- Exact-head Actions run `33913623494` completed as failure before any workflow step executed. Both Python 3.10 and 3.12 jobs have `runner_id=0` and `steps=[]`; this is infrastructure startup failure, not product/test evidence.
-- A fresh independent clone attempt against exact head `d9243eb2f1ab836f07b4a95d652a3969b2778746` on 2026-09-05 also could not begin because the execution environment could not resolve `github.com`. This is not product/test evidence and must not be represented as verification.
+- Exact PR head verified before this checkpoint commit was `41e58c39622f6dc6011910ca948b819bb2785fe4`; PR was open and non-draft.
+- Exact-head Actions run `33931155163` completed as failure before any workflow step executed. The run is therefore infrastructure startup failure, not product/test evidence.
+- A fresh independent clone attempt against exact head `41e58c39622f6dc6011910ca948b819bb2785fe4` on 2026-09-05 also could not begin because the execution environment could not resolve `github.com`. This is not product/test evidence and must not be represented as verification.
 - Treat zero-step Actions failures and DNS bootstrap failure as infrastructure conditions. Do not blind-rerun them.
-- Refetch exact-head CI after this checkpoint commit before accepting any slice.
+- Refetch PR head, mergeability and exact-head CI after this checkpoint commit before accepting any slice.
 
 ## Evidence still required before accepting the current slice
 - Exact-head CI executes real checkout/install/test steps and passes on Python 3.10 and 3.12, or equivalent clean-environment evidence is obtained.
