@@ -30,6 +30,7 @@ The competition demo must remain reproducible without Xano or paid model calls. 
 - MemoryBackend is the credential-free judge-safe path; Xano is optional and fails closed on malformed or contradictory readiness state.
 - Queue autonomy prepares only safe READY opportunities, persists runs/audit events, isolates per-opportunity failures, and returns unresolved recording/review decision points.
 - Queue processing returns a deterministic execution trace covering opportunity discovery, per-opportunity analysis, safe preparation, and human-decision stops. Failure trace entries expose only exception classes, never private backend exception text.
+- Malformed opportunity identifiers now fail closed without echoing the raw backend value into decision output or execution trace; the lane is surfaced as REVIEW with `opportunity_id: null`, and a regression uses a private-like identifier to assert it does not escape.
 - MemoryBackend preparation is idempotent for active runs: rerunning the queue reuses the existing PENDING_HUMAN_APPROVAL or APPROVED_DEMO_STATE run instead of creating duplicates. A CHANGES_REQUESTED run permits a fresh preparation run.
 - Competition/demo flows contain no external submission tool; human approval changes internal demo state only.
 - M3 judge-facing responsive HTML report is generated from the same deterministic queue/safety path and exposes Discover -> Inspect -> Decide -> Prepare -> Stop, prepared work, decision inbox, approval boundary and zero external submissions.
@@ -44,10 +45,11 @@ The competition demo must remain reproducible without Xano or paid model calls. 
 
 ## Exact verification state
 - PR #2 remains the only active competition implementation lane.
-- Exact PR head verified immediately before this checkpoint commit was `6e5283205f68bf4fe6f3b6bd1b7eb29128324f24`; PR remained open, non-draft and mergeable before the new checkpoint movement.
-- The last fully inspected CI evidence before this movement was run `33934425217` on prior head `40ca00cb60509b34d2ade13a8cba40042d9fc858`; it failed before any workflow step executed and is infrastructure startup failure, not product/test evidence.
-- No successful clean-environment execution evidence exists yet for the malformed-readiness hardening commits. Refetch exact-head CI after this checkpoint movement; do not infer success from mergeability or source review.
-- A fresh independent clone attempt earlier on 2026-09-05 could not begin because the execution environment could not resolve `github.com`. This is not product/test evidence and must not be represented as verification.
+- Immediately before this checkpoint movement, exact PR head was `a41a97e341e4ce87dccc7a1288bd3692453e170a`; PR was open, non-draft and `mergeable=true`.
+- The latest fully inspected executed CI evidence is run `33937429593` on prior head `4953ce002efbb450b8bbf2b2b8af84815126f2d5`; it failed before any workflow step executed and is infrastructure startup failure, not product/test evidence.
+- Immediately before this checkpoint movement there was no workflow run yet for head `a41a97e341e4ce87dccc7a1288bd3692453e170a`; refetch exact-head CI after this checkpoint commit.
+- No successful clean-environment execution evidence exists yet for the malformed-readiness or malformed-identifier hardening commits. Do not infer success from mergeability or source review.
+- A fresh independent clone attempt on 2026-09-05 again could not begin because the execution environment could not resolve `github.com`. This is not product/test evidence and must not be represented as verification.
 - Treat zero-step Actions failures and DNS bootstrap failure as infrastructure conditions. Do not blind-rerun them.
 
 ## Evidence still required before accepting the current slice
