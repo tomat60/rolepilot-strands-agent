@@ -26,7 +26,8 @@ The canonical competition demo must remain reproducible without Xano or paid mod
 - Queue autonomy prepares only safe READY items, persists runs/audit events, isolates per-opportunity failures, and surfaces unresolved decision points.
 - Queue processing normalizes non-canonical backend analysis `state` to fail-closed `REVIEW`; malformed state text is not echoed into decision output or execution trace.
 - Malformed opportunity identifiers fail closed without echoing raw backend values.
-- Malformed non-dictionary queue items now fail closed as isolated REVIEW lanes without echoing the raw item, and later valid opportunities continue processing.
+- Boolean opportunity identifiers now fail closed before integer coercion, preventing Python `True == 1` aliasing from routing malformed backend data to a real opportunity.
+- Malformed non-dictionary queue items fail closed as isolated REVIEW lanes without echoing the raw item, and later valid opportunities continue processing.
 - MemoryBackend preparation is idempotent for active runs; CHANGES_REQUESTED permits a fresh preparation run.
 - Competition/demo flows contain no external submission tool; approval updates internal demo state only.
 - Responsive judge HTML report is generated from the same deterministic queue/safety path and escapes backend-controlled HTML values.
@@ -35,17 +36,16 @@ The canonical competition demo must remain reproducible without Xano or paid mod
 - Xano `/analyze` is treated as untrusted and normalized to canonical opportunity_id/readiness/state/can_prepare/reasons fields only. Remote reason text and arbitrary extra fields are discarded, opportunity-id mismatches fail closed, and readiness outside 0-100 fails closed.
 - Xano readiness can no longer become READY from incomplete remote signals: missing `can_prepare`, missing/malformed `state`, contradictory state, or READY below the required readiness threshold all fail closed to REVIEW.
 - Xano `/runs` and `/approval` responses are treated as untrusted: arbitrary backend fields, remote audit text and any remote `external_submission_performed` value are discarded. Only canonical run identifiers/state plus locally generated public-safe audit events are returned. Inconsistent run/opportunity identifiers fail closed.
-- Xano approval responses must now explicitly confirm the persisted run id; an empty/malformed approval response can no longer be synthesized into a successful human-decision state.
-- Regression coverage injects private-like fields into Xano list/analyze/run/approval responses and covers incomplete readiness signals so an untrusted backend cannot implicitly promote work to READY.
+- Xano approval responses must explicitly confirm the persisted run id; an empty/malformed approval response cannot be synthesized into a successful human-decision state.
+- Regression coverage injects private-like fields into Xano list/analyze/run/approval responses and covers incomplete readiness signals plus boolean opportunity-id aliasing.
 - `scripts/verify_release.py` provides credential-free pytest + deterministic smoke + judge-report evidence capture under ignored `release-evidence/`.
 - Live Bedrock is explicit opt-in and requires model id + region before model construction. No AWS spend or live model invocation has been performed.
 - M6 docs include architecture, judge testing, verification, submission draft and sub-five-minute demo script.
 
 ## Exact verification state
-- PR #2 implementation head before this checkpoint is `aeb14a387e886f5a4a265665cd8745c8035f125b` after fail-closed Xano approval-confirmation hardening and regression coverage.
-- The preceding exact-head CI run `33979127510` on `b0a5dcade03bf556e988997535c1f83843575d76` again failed before runner execution; Python 3.12 failed and Python 3.10 was cancelled, with no step evidence. Do not treat it as product verification.
-- The latest approval-confirmation hardening was source-reviewed and regression coverage was added, but no successful clean-environment execution evidence exists yet for this slice. Do not infer success from source review or mergeability.
-- Refetch exact PR head, mergeability and exact-head CI after this checkpoint commit.
+- PR #2 moved from exact head `69904b94411a56a50181608d2b010ef1e3fb94de` to boolean-id hardening commits `cc1438a38058c231896e6f5567eabe3489ae382d` and `05c5c286823eecfe26f085bb9313d1be323841b9`; refetch the final checkpoint head after this state commit.
+- Exact-head CI run `33982301709` on `69904b94411a56a50181608d2b010ef1e3fb94de` again failed before runner execution: Python 3.12 failure and Python 3.10 cancellation, both `runner_id=0` with `steps=[]`. Do not treat it as product verification.
+- The boolean-id hardening and regression were source-reviewed but have no successful clean-environment execution evidence yet. Do not infer success from source review or mergeability.
 - Do not blind-rerun zero-step Actions failures.
 
 ## Evidence still required before merge
