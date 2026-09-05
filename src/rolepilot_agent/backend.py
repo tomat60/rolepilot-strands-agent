@@ -134,6 +134,72 @@ class XanoBackend:
             # Preserve only the status code at this public adapter boundary.
             raise RuntimeError(f"Xano returned HTTP {exc.code}") from exc
 
+    @staticmethod
+    def _safe_int(value, field_name: str) -> int:
+        if isinstance(value, bool):
+            raise RuntimeError(f"Xano returned malformed {field_name}")
+        try:
+            return int(value)
+        except (TypeError, ValueError) as exc:
+            raise RuntimeError(f"Xano returned malformed {field_name}") from exc
+
+    @classmethod
+    def _normalize_run_response(
+        cls,
+        response,
+        *,
+        expected_opportunity_id: int | None = None,
+        expected_run_id: int | None = None,
+        approved: bool | None = None,
+    ) -> dict:
+        """Return only canonical, public-safe run fields from an untrusted backend response."""
+        if not isinstance(response, dict):
+            raise RuntimeError("Xano returned malformed run response")
+
+        raw_run = response.get("run", response)
+        if not isinstance(raw_run, dict):
+            raise RuntimeError("Xano returned malformed run response")
+
+        run_id = cls._safe_int(raw_run.get("id", expected_run_id), "run id")
+        if expected_run_id is not None and run_id != expected_run_id:
+            raise RuntimeError("Xano returned inconsistent run id")
+
+        if expected_opportunity_id is not None:
+            raw_opportunity_id = raw_run.get("opportunity_id", expected_opportunity_id)
+            opportunity_id = cls._safe_int(raw_opportunity_id, "opportunity id")
+            if opportunity_id != expected_opportunity_id:
+                raise RuntimeError("Xano returned inconsistent opportunity id")
+        else:
+            raw_opportunity_id = raw_run.get("opportunity_id")
+            opportunity_id = (
+                cls._safe_int(raw_opportunity_id, "opportunity id")
+                if raw_opportunity_id is not None
+                else None
+            )
+
+        if approved is None:
+            approval_state = "PENDING_HUMAN_APPROVAL"
+            audit_events = [
+                "Deterministic safety gate passed",
+                "Xano preparation state persisted",
+                "Human approval required before external action",
+            ]
+        else:
+            approval_state = "APPROVED_DEMO_STATE" if approved else "CHANGES_REQUESTED"
+            audit_events = [
+                "Human approval recorded" if approved else "Human changes requested",
+                "External submission remains disabled",
+            ]
+
+        return {
+            "id": run_id,
+            "opportunity_id": opportunity_id,
+            "readiness": 0,
+            "approval_state": approval_state,
+            "audit_events": audit_events,
+            "external_submission_performed": False,
+        }
+
     def list_opportunities(self) -> list[dict]:
         return self._request("GET", "/opportunities")
 
@@ -194,11 +260,18 @@ class XanoBackend:
             raise SafetyGateError(
                 f"Opportunity {opportunity_id} cannot be prepared: {analysis.get('state')}"
             )
-        return self._request("POST", "/runs", {"opportunity_id": opportunity_id})
+        response = self._request("POST", "/runs", {"opportunity_id": opportunity_id})
+        return self._normalize_run_response(
+            response,
+            expected_opportunity_id=opportunity_id,
+        )
 
     def record_human_decision(self, run_id: int, approved: bool) -> dict:
-        result = self._request(
+        response = self._request(
             "POST", f"/runs/{run_id}/approval", {"approved": approved}
         )
-        result["external_submission_performed"] = False
-        return result
+        return self._normalize_run_response(
+            response,
+            expected_run_id=run_id,
+            approved=approved,
+        )
