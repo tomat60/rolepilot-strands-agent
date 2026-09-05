@@ -151,3 +151,35 @@ def test_malformed_opportunity_id_fails_closed_without_echoing_private_value():
         }
     ]
     assert private_identifier not in str(result)
+
+
+def test_malformed_analysis_state_fails_closed_without_echoing_private_value():
+    private_state = "READY:private-user@example.com"
+
+    class MalformedStateBackend(MemoryBackend):
+        def analyze(self, opportunity_id: int) -> dict:
+            if opportunity_id == 1:
+                return {
+                    "state": private_state,
+                    "can_prepare": True,
+                    "reasons": [private_state],
+                }
+            return super().analyze(opportunity_id)
+
+    result = process_queue_safely(MalformedStateBackend())
+
+    assert result["prepared"] == []
+    decisions = {item["opportunity_id"]: item for item in result["decision_points"]}
+    assert decisions[1] == {
+        "opportunity_id": 1,
+        "title": "Lifestyle Campaign - Urban Commuter",
+        "state": "REVIEW",
+        "reasons": ["malformed_analysis_state"],
+    }
+    assert private_state not in str(result)
+    assert {
+        "action": "analyze_opportunity",
+        "opportunity_id": 1,
+        "outcome": "REVIEW",
+        "reason": "malformed_analysis_state",
+    } in result["execution_trace"]
