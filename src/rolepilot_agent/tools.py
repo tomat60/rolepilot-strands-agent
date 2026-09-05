@@ -12,8 +12,8 @@ def process_queue_safely(backend: Backend) -> dict:
     every opportunity is analyzed, READY items are prepared, and all other items
     are surfaced as decision points. A failure on one opportunity fails that lane
     closed to REVIEW without stopping the rest of the queue. The returned execution
-    trace makes the work performed auditable without exposing private exception text.
-    No external action is available here.
+    trace makes the work performed auditable without exposing private exception text
+    or malformed backend identifiers. No external action is available here.
     """
     prepared: list[dict] = []
     decisions: list[dict] = []
@@ -30,6 +30,7 @@ def process_queue_safely(backend: Backend) -> dict:
 
     for opportunity in opportunities:
         raw_opportunity_id = opportunity.get("id")
+        opportunity_id: int | None = None
         try:
             opportunity_id = int(raw_opportunity_id)
             analysis = backend.analyze(opportunity_id)
@@ -79,11 +80,12 @@ def process_queue_safely(backend: Backend) -> dict:
         except Exception as exc:
             # One malformed or temporarily failing opportunity must not abort the
             # entire autonomous queue. Fail the affected lane closed and expose
-            # only the exception class, never backend/private exception text.
+            # only the exception class, never backend/private exception text. If
+            # the identifier itself is malformed, do not echo that raw value.
             safe_error = f"processing_error:{type(exc).__name__}"
             decisions.append(
                 {
-                    "opportunity_id": raw_opportunity_id,
+                    "opportunity_id": opportunity_id,
                     "title": opportunity.get("title"),
                     "state": "REVIEW",
                     "reasons": [safe_error],
@@ -92,7 +94,7 @@ def process_queue_safely(backend: Backend) -> dict:
             execution_trace.append(
                 {
                     "action": "stop_for_human_decision",
-                    "opportunity_id": raw_opportunity_id,
+                    "opportunity_id": opportunity_id,
                     "outcome": "REVIEW",
                     "reason": safe_error,
                 }
