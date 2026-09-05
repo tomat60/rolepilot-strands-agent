@@ -116,6 +116,50 @@ def test_xano_analyze_fails_closed_on_contradictory_state(monkeypatch):
     assert result["safety_warning"] == "inconsistent_ready_state"
 
 
+def test_xano_analyze_fails_closed_on_malformed_readiness_without_echo(monkeypatch):
+    backend = XanoBackend("https://example.invalid/api:rolepilot")
+    private_value = "private@example.com secret casting payload"
+    monkeypatch.setattr(
+        backend,
+        "_request",
+        lambda method, path, payload=None: {
+            "opportunity_id": payload["opportunity_id"],
+            "readiness": private_value,
+            "state": "READY",
+            "can_prepare": True,
+        },
+    )
+
+    result = backend.analyze(1)
+
+    assert result["readiness"] == 0
+    assert result["can_prepare"] is False
+    assert result["state"] == "REVIEW"
+    assert result["safety_warning"] == "malformed_readiness"
+    assert private_value not in repr(result)
+
+
+def test_xano_analyze_treats_boolean_readiness_as_malformed(monkeypatch):
+    backend = XanoBackend("https://example.invalid/api:rolepilot")
+    monkeypatch.setattr(
+        backend,
+        "_request",
+        lambda method, path, payload=None: {
+            "opportunity_id": payload["opportunity_id"],
+            "readiness": True,
+            "state": "READY",
+            "can_prepare": True,
+        },
+    )
+
+    result = backend.analyze(1)
+
+    assert result["readiness"] == 0
+    assert result["can_prepare"] is False
+    assert result["state"] == "REVIEW"
+    assert result["safety_warning"] == "malformed_readiness"
+
+
 def test_xano_http_error_does_not_expose_remote_body(monkeypatch):
     backend = XanoBackend("https://example.invalid/api:rolepilot")
     private_body = b'{"email":"private@example.com","casting":"secret"}'
