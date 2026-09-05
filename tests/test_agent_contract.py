@@ -153,6 +153,33 @@ def test_malformed_opportunity_id_fails_closed_without_echoing_private_value():
     assert private_identifier not in str(result)
 
 
+def test_malformed_queue_item_fails_closed_and_later_items_continue():
+    private_item = "private-user@example.com"
+
+    class MalformedItemBackend(MemoryBackend):
+        def list_opportunities(self) -> list[dict]:
+            valid = super().list_opportunities()
+            return [private_item, *valid]
+
+    result = process_queue_safely(MalformedItemBackend())
+
+    assert result["external_submission_performed"] is False
+    assert result["decision_points"][0] == {
+        "opportunity_id": None,
+        "title": None,
+        "state": "REVIEW",
+        "reasons": ["processing_error:TypeError"],
+    }
+    assert [item["opportunity_id"] for item in result["prepared"]] == [1]
+    assert private_item not in str(result)
+    assert {
+        "action": "stop_for_human_decision",
+        "opportunity_id": None,
+        "outcome": "REVIEW",
+        "reason": "processing_error:TypeError",
+    } in result["execution_trace"]
+
+
 def test_malformed_analysis_state_fails_closed_without_echoing_private_value():
     private_state = "READY:private-user@example.com"
 
