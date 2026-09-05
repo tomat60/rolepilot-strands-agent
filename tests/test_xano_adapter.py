@@ -170,6 +170,64 @@ def test_xano_analyze_fails_closed_on_string_false(monkeypatch):
     assert result["safety_warning"] == "malformed_can_prepare"
 
 
+def test_xano_analyze_fails_closed_on_missing_can_prepare(monkeypatch):
+    backend = XanoBackend("https://example.invalid/api:rolepilot")
+    monkeypatch.setattr(
+        backend,
+        "_request",
+        lambda method, path, payload=None: {
+            "opportunity_id": payload["opportunity_id"],
+            "readiness": 99,
+            "state": "READY",
+        },
+    )
+
+    result = backend.analyze(1)
+
+    assert result["can_prepare"] is False
+    assert result["state"] == "REVIEW"
+    assert result["safety_warning"] == "missing_can_prepare"
+
+
+def test_xano_analyze_fails_closed_on_missing_state(monkeypatch):
+    backend = XanoBackend("https://example.invalid/api:rolepilot")
+    monkeypatch.setattr(
+        backend,
+        "_request",
+        lambda method, path, payload=None: {
+            "opportunity_id": payload["opportunity_id"],
+            "readiness": 99,
+            "can_prepare": True,
+        },
+    )
+
+    result = backend.analyze(1)
+
+    assert result["can_prepare"] is False
+    assert result["state"] == "REVIEW"
+    assert result["safety_warning"] == "missing_state"
+
+
+def test_xano_analyze_fails_closed_on_ready_below_threshold(monkeypatch):
+    backend = XanoBackend("https://example.invalid/api:rolepilot")
+    monkeypatch.setattr(
+        backend,
+        "_request",
+        lambda method, path, payload=None: {
+            "opportunity_id": payload["opportunity_id"],
+            "readiness": 42,
+            "state": "READY",
+            "can_prepare": True,
+        },
+    )
+
+    result = backend.analyze(1)
+
+    assert result["can_prepare"] is False
+    assert result["state"] == "REVIEW"
+    assert result["safety_warning"] == "insufficient_readiness"
+
+
 def test_xano_analyze_fails_closed_on_contradictory_state(monkeypatch):
     backend = XanoBackend("https://example.invalid/api:rolepilot")
     monkeypatch.setattr(
