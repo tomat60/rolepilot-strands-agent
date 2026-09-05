@@ -56,24 +56,98 @@ def test_xano_prepare_posts_only_after_ready_gate(monkeypatch):
 
     result = backend.create_run(1)
 
-    assert result["run"]["id"] == 7
+    assert result["id"] == 7
+    assert result["opportunity_id"] == 1
+    assert result["approval_state"] == "PENDING_HUMAN_APPROVAL"
+    assert result["external_submission_performed"] is False
     assert requests == [("POST", "/runs", {"opportunity_id": 1})]
+
+
+def test_xano_create_run_does_not_echo_private_backend_fields(monkeypatch):
+    backend = XanoBackend("https://example.invalid/api:rolepilot")
+    private_value = "private@example.com secret casting payload"
+    monkeypatch.setattr(
+        backend,
+        "analyze",
+        lambda opportunity_id: {
+            "opportunity_id": opportunity_id,
+            "state": "READY",
+            "can_prepare": True,
+        },
+    )
+    monkeypatch.setattr(
+        backend,
+        "_request",
+        lambda method, path, payload=None: {
+            "run": {
+                "id": 7,
+                "opportunity_id": payload["opportunity_id"],
+                "private_profile": private_value,
+                "audit_events": [private_value],
+                "external_submission_performed": True,
+            },
+            "debug": private_value,
+        },
+    )
+
+    result = backend.create_run(1)
+
+    assert result == {
+        "id": 7,
+        "opportunity_id": 1,
+        "readiness": 0,
+        "approval_state": "PENDING_HUMAN_APPROVAL",
+        "audit_events": [
+            "Deterministic safety gate passed",
+            "Xano preparation state persisted",
+            "Human approval required before external action",
+        ],
+        "external_submission_performed": False,
+    }
+    assert private_value not in repr(result)
+
+
+def test_xano_create_run_rejects_inconsistent_opportunity_id(monkeypatch):
+    backend = XanoBackend("https://example.invalid/api:rolepilot")
+    monkeypatch.setattr(
+        backend,
+        "analyze",
+        lambda opportunity_id: {
+            "opportunity_id": opportunity_id,
+            "state": "READY",
+            "can_prepare": True,
+        },
+    )
+    monkeypatch.setattr(
+        backend,
+        "_request",
+        lambda method, path, payload=None: {"id": 7, "opportunity_id": 999},
+    )
+
+    with pytest.raises(RuntimeError, match="inconsistent opportunity id"):
+        backend.create_run(1)
 
 
 def test_xano_demo_approval_is_explicitly_non_external(monkeypatch):
     backend = XanoBackend("https://example.invalid/api:rolepilot")
+    private_value = "private@example.com secret casting payload"
     monkeypatch.setattr(
         backend,
         "_request",
         lambda method, path, payload=None: {
             "id": 7,
             "approval_state": "APPROVED_DEMO_STATE",
+            "external_submission_performed": True,
+            "private_profile": private_value,
         },
     )
 
     result = backend.record_human_decision(7, True)
 
+    assert result["id"] == 7
+    assert result["approval_state"] == "APPROVED_DEMO_STATE"
     assert result["external_submission_performed"] is False
+    assert private_value not in repr(result)
 
 
 def test_xano_analyze_fails_closed_on_string_false(monkeypatch):
