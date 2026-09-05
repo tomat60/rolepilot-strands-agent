@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+.env
+.env.*
+.DS_Store
+
+# Generated judge/demo artifacts may contain backend-provided opportunity data.
+rolepilot-report.html
+rolepilot-report-*.html
+release-evidence/

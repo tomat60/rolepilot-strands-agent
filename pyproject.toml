@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=70", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rolepilot-strands-agent"
+version = "0.1.0"
+description = "Safe-delegation casting workflow agent built with the Strands Agents SDK"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [{ name = "Paweł Tomczak" }]
+dependencies = [
+  "strands-agents>=1.0.0,<2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0,<9.0",
+]
+
+[project.scripts]
+rolepilot-agent = "rolepilot_agent.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
