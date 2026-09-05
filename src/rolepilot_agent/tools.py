@@ -5,6 +5,9 @@ from strands import tool
 from .backend import Backend
 
 
+CANONICAL_READINESS_STATES = {"READY", "NEEDS_RECORDING", "REVIEW"}
+
+
 def process_queue_safely(backend: Backend) -> dict:
     """Process the full queue up to the human/external-action boundary.
 
@@ -34,12 +37,15 @@ def process_queue_safely(backend: Backend) -> dict:
         try:
             opportunity_id = int(raw_opportunity_id)
             analysis = backend.analyze(opportunity_id)
-            state = analysis.get("state", "REVIEW")
+            raw_state = analysis.get("state", "REVIEW")
+            state = raw_state if raw_state in CANONICAL_READINESS_STATES else "REVIEW"
+            malformed_state = state == "REVIEW" and raw_state not in CANONICAL_READINESS_STATES
             execution_trace.append(
                 {
                     "action": "analyze_opportunity",
                     "opportunity_id": opportunity_id,
                     "outcome": state,
+                    **({"reason": "malformed_analysis_state"} if malformed_state else {}),
                 }
             )
 
@@ -62,12 +68,15 @@ def process_queue_safely(backend: Backend) -> dict:
                 )
                 continue
 
+            reasons = analysis.get("reasons", [])
+            if malformed_state:
+                reasons = ["malformed_analysis_state"]
             decisions.append(
                 {
                     "opportunity_id": opportunity_id,
                     "title": opportunity.get("title"),
                     "state": state,
-                    "reasons": analysis.get("reasons", []),
+                    "reasons": reasons,
                 }
             )
             execution_trace.append(
@@ -75,6 +84,7 @@ def process_queue_safely(backend: Backend) -> dict:
                     "action": "stop_for_human_decision",
                     "opportunity_id": opportunity_id,
                     "outcome": state,
+                    **({"reason": "malformed_analysis_state"} if malformed_state else {}),
                 }
             )
         except Exception as exc:
@@ -139,9 +149,9 @@ def build_tools(backend: Backend):
         """Process every available opportunity and return only prepared work and real decision points.
 
         READY opportunities are prepared and persisted. NEEDS_RECORDING, REVIEW,
-        and per-opportunity processing failures are surfaced without preparation.
-        The result includes a deterministic execution trace for auditability.
-        This tool cannot submit externally.
+        malformed backend analysis state, and per-opportunity processing failures are
+        surfaced without preparation. The result includes a deterministic execution
+        trace for auditability. This tool cannot submit externally.
         """
         return process_queue_safely(backend)
 
