@@ -24,22 +24,23 @@ The canonical competition demo must remain reproducible without Xano or paid mod
 - Strands `Agent` orchestration exposes five custom product tools, including autonomous full-queue processing.
 - Deterministic READY / NEEDS_RECORDING / REVIEW safety logic remains separate from model output.
 - Queue autonomy prepares only safe READY items, persists runs/audit events, isolates per-opportunity failures, and surfaces unresolved decision points.
-- Queue processing now also normalizes any non-canonical backend analysis `state` to fail-closed `REVIEW`; malformed state text is not echoed into decision output or execution trace. Regression coverage uses a private-like malformed value and requires it not to escape.
+- Queue processing normalizes non-canonical backend analysis `state` to fail-closed `REVIEW`; malformed state text is not echoed into decision output or execution trace.
 - Malformed opportunity identifiers fail closed without echoing raw backend values.
 - MemoryBackend preparation is idempotent for active runs; CHANGES_REQUESTED permits a fresh preparation run.
 - Competition/demo flows contain no external submission tool; approval updates internal demo state only.
 - Responsive judge HTML report is generated from the same deterministic queue/safety path and escapes backend-controlled HTML values.
 - Optional Xano errors and malformed readiness/can-prepare combinations fail closed and redact remote error bodies.
+- Xano `/runs` and `/approval` responses are now treated as untrusted: arbitrary backend fields, remote audit text and any remote `external_submission_performed` value are discarded. Only canonical run identifiers/state plus locally generated public-safe audit events are returned. Inconsistent run/opportunity identifiers fail closed.
+- Regression coverage injects private-like fields into Xano run/approval responses and requires them not to escape the adapter.
 - `scripts/verify_release.py` provides credential-free pytest + deterministic smoke + judge-report evidence capture under ignored `release-evidence/`.
 - Live Bedrock is explicit opt-in and requires model id + region before model construction. No AWS spend or live model invocation has been performed.
 - M6 docs include architecture, judge testing, verification, submission draft and sub-five-minute demo script.
 
 ## Exact verification state
-- Before the latest reliability hardening, PR #2 exact head was `e57e07ac053074e9fcf72d20064241edf4915051`, open, non-draft and mergeable.
-- Latest reliability commits add fail-closed queue analysis-state normalization and its regression; exact implementation head immediately before this checkpoint commit is `6ae7a94b1e71f46f10e5a11c26c98d1de3ecb146`.
-- Exact-head CI run `33959067040` on `6ae7a94b1e71f46f10e5a11c26c98d1de3ecb146` completed before any executable step: Python 3.12 failed and Python 3.10 was cancelled with no job steps. This is infrastructure startup failure, not product/test evidence.
-- A fresh independent clean clone on 2026-09-05 again failed before checkout because the execution environment could not resolve `github.com`. This is not product/test evidence.
-- No successful clean-environment execution evidence exists yet for the latest reliability commits. Do not infer success from mergeability or source review.
+- PR #2 exact head before the latest Xano run-response privacy slice was `1080630922c0fdf92077715c10166d268dadacd6`, open and non-draft.
+- Latest implementation commits are `077b72ea12a16c16d8247efe4367e7bf506fa034` (canonical Xano run response normalization) and `762cc01255608ba8b9e693c9fdc531c5e78e56cf` (privacy/inconsistency regression coverage).
+- Previous exact-head CI run `33959090387` on `1080630922c0fdf92077715c10166d268dadacd6` completed as failure before usable test evidence; do not treat it as product verification.
+- No successful clean-environment execution evidence exists yet for the latest reliability/privacy commits. Do not infer success from source review or mergeability.
 - Refetch exact PR head, mergeability and exact-head CI after this checkpoint commit.
 - Do not blind-rerun zero-step Actions failures.
 
