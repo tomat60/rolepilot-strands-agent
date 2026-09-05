@@ -32,9 +32,13 @@ def process_queue_safely(backend: Backend) -> dict:
     )
 
     for opportunity in opportunities:
-        raw_opportunity_id = opportunity.get("id")
         opportunity_id: int | None = None
+        title = None
         try:
+            if not isinstance(opportunity, dict):
+                raise TypeError("Malformed opportunity item")
+            title = opportunity.get("title")
+            raw_opportunity_id = opportunity.get("id")
             opportunity_id = int(raw_opportunity_id)
             analysis = backend.analyze(opportunity_id)
             raw_state = analysis.get("state", "REVIEW")
@@ -54,7 +58,7 @@ def process_queue_safely(backend: Backend) -> dict:
                 prepared.append(
                     {
                         "opportunity_id": opportunity_id,
-                        "title": opportunity.get("title"),
+                        "title": title,
                         "run": run,
                     }
                 )
@@ -74,7 +78,7 @@ def process_queue_safely(backend: Backend) -> dict:
             decisions.append(
                 {
                     "opportunity_id": opportunity_id,
-                    "title": opportunity.get("title"),
+                    "title": title,
                     "state": state,
                     "reasons": reasons,
                 }
@@ -91,12 +95,12 @@ def process_queue_safely(backend: Backend) -> dict:
             # One malformed or temporarily failing opportunity must not abort the
             # entire autonomous queue. Fail the affected lane closed and expose
             # only the exception class, never backend/private exception text. If
-            # the identifier itself is malformed, do not echo that raw value.
+            # the identifier or item itself is malformed, do not echo raw values.
             safe_error = f"processing_error:{type(exc).__name__}"
             decisions.append(
                 {
                     "opportunity_id": opportunity_id,
-                    "title": opportunity.get("title"),
+                    "title": title,
                     "state": "REVIEW",
                     "reasons": [safe_error],
                 }
@@ -149,9 +153,9 @@ def build_tools(backend: Backend):
         """Process every available opportunity and return only prepared work and real decision points.
 
         READY opportunities are prepared and persisted. NEEDS_RECORDING, REVIEW,
-        malformed backend analysis state, and per-opportunity processing failures are
-        surfaced without preparation. The result includes a deterministic execution
-        trace for auditability. This tool cannot submit externally.
+        malformed backend analysis state, malformed queue items, and per-opportunity
+        processing failures are surfaced without preparation. The result includes a
+        deterministic execution trace for auditability. This tool cannot submit externally.
         """
         return process_queue_safely(backend)
 
