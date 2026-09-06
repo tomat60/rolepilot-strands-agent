@@ -9,13 +9,10 @@ CANONICAL_READINESS_STATES = {"READY", "NEEDS_RECORDING", "REVIEW"}
 
 
 def _require_strict_int_identifier(value, field_name: str) -> int:
-    """Reject bool/int aliasing and malformed identifiers at tool boundaries."""
-    if isinstance(value, bool):
+    """Require a real Python int and reject lossy identity coercion."""
+    if isinstance(value, bool) or not isinstance(value, int):
         raise TypeError(f"Malformed {field_name}")
-    try:
-        return int(value)
-    except (TypeError, ValueError) as exc:
-        raise TypeError(f"Malformed {field_name}") from exc
+    return value
 
 
 def _require_confirmed_analysis(analysis, opportunity_id: int) -> dict:
