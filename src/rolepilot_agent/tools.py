@@ -8,6 +8,28 @@ from .backend import Backend
 CANONICAL_READINESS_STATES = {"READY", "NEEDS_RECORDING", "REVIEW"}
 
 
+def _require_confirmed_analysis(analysis, opportunity_id: int) -> dict:
+    """Validate that analysis explicitly belongs to the requested opportunity."""
+    if not isinstance(analysis, dict):
+        raise TypeError("Malformed analysis response")
+
+    raw_opportunity_id = analysis.get("opportunity_id")
+    if isinstance(raw_opportunity_id, bool):
+        raise TypeError("Malformed analysis identity")
+
+    try:
+        analyzed_opportunity_id = int(raw_opportunity_id)
+    except (TypeError, ValueError) as exc:
+        raise TypeError("Malformed analysis identity") from exc
+
+    if analyzed_opportunity_id != opportunity_id:
+        raise ValueError("Analysis opportunity mismatch")
+
+    confirmed = dict(analysis)
+    confirmed["opportunity_id"] = analyzed_opportunity_id
+    return confirmed
+
+
 def _require_confirmed_run(run, opportunity_id: int) -> dict:
     """Validate that persistence explicitly confirms the intended opportunity.
 
@@ -100,9 +122,9 @@ def process_queue_safely(backend: Backend) -> dict:
             if isinstance(raw_opportunity_id, bool):
                 raise TypeError("Malformed opportunity id")
             opportunity_id = int(raw_opportunity_id)
-            analysis = backend.analyze(opportunity_id)
-            if not isinstance(analysis, dict):
-                raise TypeError("Malformed analysis response")
+            analysis = _require_confirmed_analysis(
+                backend.analyze(opportunity_id), opportunity_id
+            )
             raw_state = analysis.get("state", "REVIEW")
             state = raw_state if raw_state in CANONICAL_READINESS_STATES else "REVIEW"
             malformed_state = state == "REVIEW" and raw_state not in CANONICAL_READINESS_STATES
@@ -197,7 +219,7 @@ def build_tools(backend: Backend):
         Args:
             opportunity_id: Numeric opportunity identifier.
         """
-        return backend.analyze(opportunity_id)
+        return _require_confirmed_analysis(backend.analyze(opportunity_id), opportunity_id)
 
     @tool
     def prepare_application_run(opportunity_id: int) -> dict:
@@ -215,11 +237,11 @@ def build_tools(backend: Backend):
         """Process every available opportunity and return only prepared work and real decision points.
 
         READY opportunities are prepared and persisted. NEEDS_RECORDING, REVIEW,
-        queue-discovery failures, malformed backend analysis state, malformed queue items,
-        and per-opportunity processing failures are surfaced without preparation. Persisted
-        run identity must explicitly match the opportunity before preparation is reported.
-        The result includes a deterministic execution trace for auditability. This tool cannot
-        submit externally.
+        queue-discovery failures, malformed or mismatched backend analysis identity/state,
+        malformed queue items, and per-opportunity processing failures are surfaced without
+        preparation. Persisted run identity must explicitly match the opportunity before
+        preparation is reported. The result includes a deterministic execution trace for
+        auditability. This tool cannot submit externally.
         """
         return process_queue_safely(backend)
 
