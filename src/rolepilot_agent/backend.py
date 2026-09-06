@@ -238,8 +238,10 @@ class XanoBackend:
         if not isinstance(result, dict):
             raise RuntimeError("Xano returned malformed analysis response")
 
+        if "opportunity_id" not in result:
+            raise RuntimeError("Xano returned malformed opportunity id")
         remote_opportunity_id = self._safe_int(
-            result.get("opportunity_id", opportunity_id), "opportunity id"
+            result.get("opportunity_id"), "opportunity id"
         )
         if remote_opportunity_id != opportunity_id:
             raise RuntimeError("Xano returned inconsistent opportunity id")
