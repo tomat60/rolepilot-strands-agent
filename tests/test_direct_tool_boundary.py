@@ -16,6 +16,15 @@ def test_direct_prepare_rejects_boolean_opportunity_identifier():
     assert backend.runs == {}
 
 
+def test_direct_prepare_rejects_lossy_numeric_identifier_coercion():
+    backend = MemoryBackend()
+
+    with pytest.raises(TypeError, match="Malformed opportunity id"):
+        prepare_application_run_safely(backend, 1.7)
+
+    assert backend.runs == {}
+
+
 def test_direct_prepare_requires_persisted_identity_confirmation():
     class WrongRunBackend(MemoryBackend):
         def create_run(self, opportunity_id: int) -> dict:
@@ -35,6 +44,16 @@ def test_human_decision_rejects_boolean_run_identifier():
 
     with pytest.raises(TypeError, match="Malformed run id"):
         record_human_decision_safely(backend, True, True)
+
+    assert backend.runs[run["id"]].approval_state == "PENDING_HUMAN_APPROVAL"
+
+
+def test_human_decision_rejects_lossy_numeric_run_identifier_coercion():
+    backend = MemoryBackend()
+    run = prepare_application_run_safely(backend, 1)
+
+    with pytest.raises(TypeError, match="Malformed run id"):
+        record_human_decision_safely(backend, float(run["id"]), True)
 
     assert backend.runs[run["id"]].approval_state == "PENDING_HUMAN_APPROVAL"
 
