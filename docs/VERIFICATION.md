@@ -82,4 +82,15 @@ Until this succeeds, public copy must describe Bedrock as an implemented, explic
 
 ## Current evidence status
 
-As of 2026-09-04, implementation review confirms the release gates exist in source and tests, but the latest exact-head GitHub Actions attempt for PR #2 failed before runner assignment with zero executed steps. Therefore CI is not test evidence. Clean-environment execution, deterministic smoke, visual report review and live Bedrock verification remain outstanding.
+As of 2026-09-06, GitHub-hosted CI is executing normally again. PR #2 release-candidate run `34037352312` completed successfully on Python 3.10 and 3.12 with real checkout, dependency installation, full pytest and deterministic smoke. Python 3.12 also executed `python scripts/verify_release.py` successfully and retained the generated judge report as a short-lived workflow artifact for visual QA.
+
+The direct Python 3.12 test stage reports 75 passing tests. The deterministic smoke demonstrates that READY work is prepared only to `PENDING_HUMAN_APPROVAL`, NEEDS_RECORDING and REVIEW stay unprepared, and `external_submission_performed` remains false.
+
+A current full-PR diff review found no committed credentials, tokens, private casting payloads, or generated release-evidence artifacts. Synthetic privacy/adversarial fixtures remain intentionally present in tests. This review must be repeated after any further implementation movement.
+
+Still outstanding before merge/final submission:
+
+- visually inspect the generated judge report at desktop width and approximately 390 px mobile width;
+- keep the final diff/privacy/secrets review clean after any new commit;
+- perform one bounded live Strands + Bedrock run only after explicit owner authorization, AWS/model access and cost approval;
+- verify final Devpost copy and video against the current official competition requirements.
