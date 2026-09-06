@@ -24,7 +24,7 @@ The canonical competition demo must remain reproducible without Xano or paid mod
 - Strands `Agent` orchestration exposes five custom product tools, including autonomous full-queue processing.
 - Deterministic READY / NEEDS_RECORDING / REVIEW safety logic remains separate from model output.
 - Queue autonomy prepares only safe READY items, persists runs/audit events, isolates per-opportunity failures, and surfaces unresolved decision points.
-- Analysis identity is now treated as untrusted at the shared tool/queue boundary: an analysis result must explicitly contain a non-boolean numeric `opportunity_id` matching the opportunity requested. Missing, malformed, boolean-aliased, or mismatched analysis identity fails closed and cannot reach preparation; later valid queue items continue.
+- Analysis identity is treated as untrusted at both the shared tool/queue boundary and the Xano adapter boundary: `/analyze` must explicitly return a non-boolean numeric `opportunity_id` matching the requested opportunity. Missing, malformed, boolean-aliased, or mismatched analysis identity fails closed and cannot reach preparation.
 - Queue persistence requires the returned run to explicitly contain a valid run id and the same opportunity id before preparation is reported. Missing, malformed, boolean-aliased, or mismatched persisted identity fails that lane closed to REVIEW while later opportunities continue.
 - Xano `/runs` persistence requires the backend response itself to explicitly contain the expected `opportunity_id`; the adapter does not synthesize persistence identity.
 - Queue discovery fails closed when the backend raises or returns a non-list response; remote/private exception text is never echoed and no preparation is attempted.
@@ -33,17 +33,17 @@ The canonical competition demo must remain reproducible without Xano or paid mod
 - MemoryBackend preparation is idempotent for active runs; CHANGES_REQUESTED permits a fresh preparation run.
 - Competition/demo flows contain no external submission tool; approval updates internal demo state only.
 - Responsive judge HTML report is generated from the same deterministic queue/safety path and escapes backend-controlled HTML values.
-- Xano `/opportunities`, `/analyze`, `/runs`, and `/approval` are treated as untrusted boundaries. Arbitrary/private fields are discarded, remote error bodies are redacted, contradictory readiness signals fail closed, and persisted run/approval identity must be explicitly confirmed.
-- Regression coverage includes private-like backend fields, incomplete readiness signals, malformed/boolean IDs, queue discovery failure, analysis identity mismatch/missing identity, persisted-run identity mismatch/missing identity, and Xano run/approval confirmation failures.
+- Xano `/opportunities`, `/analyze`, `/runs`, and `/approval` are treated as untrusted boundaries. Arbitrary/private fields are discarded, remote error bodies are redacted, contradictory readiness signals fail closed, and analysis/run/approval identity must be explicitly confirmed.
+- Regression coverage includes private-like backend fields, incomplete readiness signals, malformed/boolean IDs, queue discovery failure, analysis identity mismatch/missing identity, persisted-run identity mismatch/missing identity, explicit Xano `/analyze` identity confirmation, and Xano run/approval confirmation failures.
 - `scripts/verify_release.py` provides credential-free pytest + deterministic smoke + judge-report evidence capture under ignored `release-evidence/`.
 - Live Bedrock is explicit opt-in and requires model id + region before model construction. No AWS spend or live model invocation has been performed.
 - M6 docs include architecture, judge testing, verification, submission draft and sub-five-minute demo script.
 
 ## Exact verification state
-- Source commits for the latest analysis-identity slice are `50c07db03f82a73be656d0989f07c0dcc8634929` and regression commit `6aa481b3dee7c29d69330df03aa39ca786404b8e`; refetch the final PR head after this documentation commit.
-- Exact-head CI run `34007598309` on previous head `ba659a161e3d596cf425f2a2d038316bb74b89cf` failed before runner execution: both Python jobs had `runner_id=0` and `steps=[]`. Do not treat it as product verification.
-- A fresh clean-clone workaround was previously attempted, but local execution could not reach GitHub because DNS resolution for `github.com` failed before checkout. This is infrastructure evidence only, not product verification.
-- The latest analysis-identity hardening and its regression are source-reviewed but have no successful clean-environment execution evidence yet. Do not infer success from source review or mergeability.
+- Latest Xano analysis-identity hardening commits are `8924bd6618270637b60d875b535fe9e386144371` and regression commit `c269983c734c7e7d3c715da0c7e5314c1ffc4fb6`; refetch the final PR head after this documentation commit.
+- Exact-head CI run `34009981696` on prior head `040659f23f25d13e456641916ca9699ab1ef9e95` failed before runner execution: both Python jobs had `runner_id=0` and `steps=[]`. Do not treat it as product verification.
+- A fresh clean-clone workaround was attempted again on 2026-09-06, but local execution could not reach GitHub because DNS resolution for `github.com` failed before checkout. This is infrastructure evidence only, not product verification.
+- The latest Xano analysis-identity hardening and its regression are source-reviewed but have no successful clean-environment execution evidence yet. Do not infer success from source review or mergeability.
 - Do not blind-rerun zero-step Actions failures.
 
 ## Evidence still required before merge
