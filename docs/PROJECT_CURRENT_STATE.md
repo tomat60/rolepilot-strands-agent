@@ -24,10 +24,10 @@ The canonical competition demo must remain reproducible without Xano or paid mod
 - Strands `Agent` orchestration exposes five custom product tools, including autonomous full-queue processing.
 - Deterministic READY / NEEDS_RECORDING / REVIEW safety logic remains separate from model output.
 - Queue autonomy prepares only safe READY items, persists runs/audit events, isolates per-opportunity failures, and surfaces unresolved decision points.
-- Analysis, persisted-run, and approval identities are treated as untrusted and must be explicitly confirmed before success is surfaced.
+- Analysis, persisted-run, queue-item, and approval identities are treated as untrusted and must be explicit real integers; booleans, floats, strings, and other lossy aliases fail closed.
 - Queue discovery and per-opportunity processing fail closed without echoing private backend exception text.
 - Malformed queue items, readiness states, identifiers, and Python boolean/int aliases fail closed.
-- Direct agent tool boundaries reject boolean identifiers and lossy numeric coercion, require explicit boolean approval decisions, confirm persisted run identity after direct preparation, and confirm that decision persistence refers to the requested run.
+- Direct agent tool boundaries require strict integer identifiers and explicit boolean approval decisions, confirm persisted run identity after direct preparation, and confirm that decision persistence refers to the requested run.
 - MemoryBackend preparation is idempotent for active runs; CHANGES_REQUESTED permits a fresh preparation run.
 - Competition/demo flows contain no external submission tool; approval updates internal demo state only.
 - Responsive judge HTML report is generated from the same deterministic queue/safety path and escapes backend-controlled HTML values.
@@ -37,14 +37,14 @@ The canonical competition demo must remain reproducible without Xano or paid mod
 - M6 docs include architecture, judge testing, verification, submission draft and sub-five-minute demo script.
 
 ## Latest steward movement
-- Commit `daaf611524bc2d7a96a6eb7e6b52ce3dbeab5cf0` changed the direct identifier helper from coercive `int(value)` handling to a real-int-only boundary so values such as `1.7` cannot alias opportunity/run `1`.
-- Commit `c85e12f2d5ecbc006f4d6557cdff0511945bcd23` added regressions proving lossy float identifiers are rejected before preparation or human-decision persistence.
+- Commit `66bf98a7878c5b5846eab2113b2f11db42549919` removed remaining `int(...)` coercion from untrusted backend analysis/run identities and queue opportunity IDs so values such as `1.7` or `"1"` cannot alias real identifier `1`.
+- Commit `c6a1ea65e451ff0ca1d0148a11a5f27fdefa560a` added regressions for lossy analysis identity, persisted run identity, and queue opportunity identity.
 - These changes are source-reviewed only until clean execution evidence exists.
 
 ## Exact verification state
-- PR #2 head before this documentation commit is `c85e12f2d5ecbc006f4d6557cdff0511945bcd23`; refetch after this commit.
-- Exact-head GitHub Actions on the prior head `46cc5df6f93b0dc7441516ec764474b957001b60` was run `34015045483` and failed before runner execution. Job inspection showed no executable steps/log blob, so this is infrastructure failure rather than product verification.
-- A fresh clean-clone workaround on 2026-09-06 again failed before checkout because the execution environment could not resolve `github.com`.
+- PR #2 head before this documentation commit is `c6a1ea65e451ff0ca1d0148a11a5f27fdefa560a`; refetch after this commit.
+- Exact-head GitHub Actions on prior head `c356fe1b7e2141a1a2cb99cba870c94c42f43eaa` was run `34020403858` and failed before usable runner execution; this is infrastructure failure rather than product verification.
+- A fresh clean-clone workaround on 2026-09-06 failed before checkout because the execution environment could not resolve `github.com`.
 - The local environment also does not already contain `strands-agents`, so a reconstructed-source run without dependency installation would not be equivalent clean-install evidence and is not being misrepresented as such.
 - Do not blind-rerun zero-step Actions failures.
 
