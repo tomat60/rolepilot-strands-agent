@@ -128,6 +128,27 @@ def test_xano_create_run_rejects_inconsistent_opportunity_id(monkeypatch):
         backend.create_run(1)
 
 
+def test_xano_create_run_requires_explicit_opportunity_id_confirmation(monkeypatch):
+    backend = XanoBackend("https://example.invalid/api:rolepilot")
+    monkeypatch.setattr(
+        backend,
+        "analyze",
+        lambda opportunity_id: {
+            "opportunity_id": opportunity_id,
+            "state": "READY",
+            "can_prepare": True,
+        },
+    )
+    monkeypatch.setattr(
+        backend,
+        "_request",
+        lambda method, path, payload=None: {"run": {"id": 7}},
+    )
+
+    with pytest.raises(RuntimeError, match="malformed opportunity id"):
+        backend.create_run(1)
+
+
 def test_xano_demo_approval_is_explicitly_non_external(monkeypatch):
     backend = XanoBackend("https://example.invalid/api:rolepilot")
     private_value = "private@example.com secret casting payload"
