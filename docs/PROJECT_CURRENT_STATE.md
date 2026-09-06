@@ -24,26 +24,26 @@ The canonical competition demo must remain reproducible without Xano or paid mod
 - Strands `Agent` orchestration exposes five custom product tools, including autonomous full-queue processing.
 - Deterministic READY / NEEDS_RECORDING / REVIEW safety logic remains separate from model output.
 - Queue autonomy prepares only safe READY items, persists runs/audit events, isolates per-opportunity failures, and surfaces unresolved decision points.
-- Analysis, persisted-run, queue-item, and approval identities are treated as untrusted and must be explicit real integers; booleans, floats, strings, and other lossy aliases fail closed.
+- Analysis, persisted-run, queue-item, approval, and Xano adapter identities are treated as untrusted and must be explicit real integers; booleans, floats, strings, and other lossy aliases fail closed.
 - Queue discovery and per-opportunity processing fail closed without echoing private backend exception text.
 - Malformed queue items, readiness states, identifiers, and Python boolean/int aliases fail closed.
 - Direct agent tool boundaries require strict integer identifiers and explicit boolean approval decisions, confirm persisted run identity after direct preparation, and confirm that decision persistence refers to the requested run.
 - MemoryBackend preparation is idempotent for active runs; CHANGES_REQUESTED permits a fresh preparation run.
 - Competition/demo flows contain no external submission tool; approval updates internal demo state only.
 - Responsive judge HTML report is generated from the same deterministic queue/safety path and escapes backend-controlled HTML values.
-- Xano `/opportunities`, `/analyze`, `/runs`, and `/approval` are treated as untrusted boundaries. Arbitrary/private fields are discarded, remote error bodies are redacted, contradictory readiness signals fail closed, and identity must be explicitly confirmed where required.
+- Xano `/opportunities`, `/analyze`, `/runs`, and `/approval` are treated as untrusted boundaries. Arbitrary/private fields are discarded, remote error bodies are redacted, contradictory readiness signals fail closed, and identity must be explicitly confirmed with no numeric coercion.
 - `scripts/verify_release.py` provides credential-free pytest + deterministic smoke + judge-report evidence capture under ignored `release-evidence/`.
 - Live Bedrock is explicit opt-in and requires model id + region before model construction. No AWS spend or live model invocation has been performed.
 - M6 docs include architecture, judge testing, verification, submission draft and sub-five-minute demo script.
 
 ## Latest steward movement
-- Commit `66bf98a7878c5b5846eab2113b2f11db42549919` removed remaining `int(...)` coercion from untrusted backend analysis/run identities and queue opportunity IDs so values such as `1.7` or `"1"` cannot alias real identifier `1`.
-- Commit `c6a1ea65e451ff0ca1d0148a11a5f27fdefa560a` added regressions for lossy analysis identity, persisted run identity, and queue opportunity identity.
+- Commit `dc00a1b4f3dcffd3a53da29cedf464ef11a6d173` hardened `XanoBackend._safe_int` so untrusted Xano identities are never coerced with `int(...)`; strings, floats, booleans and other aliases now fail closed.
+- Commit `2ab7312a59cc18f8b84b8269a245a454e28a1d1a` added regressions for lossy opportunity, analysis and run identities at the Xano adapter boundary.
 - These changes are source-reviewed only until clean execution evidence exists.
 
 ## Exact verification state
-- PR #2 head before this documentation commit is `c6a1ea65e451ff0ca1d0148a11a5f27fdefa560a`; refetch after this commit.
-- Exact-head GitHub Actions on prior head `c356fe1b7e2141a1a2cb99cba870c94c42f43eaa` was run `34020403858` and failed before usable runner execution; this is infrastructure failure rather than product verification.
+- PR #2 head before this documentation commit is `2ab7312a59cc18f8b84b8269a245a454e28a1d1a`; refetch after this commit.
+- Exact-head GitHub Actions on prior head `b1f823a418167571847d4884aa8ce293ed979a0c` was run `34023140511` and failed before usable runner execution; this is infrastructure failure rather than product verification.
 - A fresh clean-clone workaround on 2026-09-06 failed before checkout because the execution environment could not resolve `github.com`.
 - The local environment also does not already contain `strands-agents`, so a reconstructed-source run without dependency installation would not be equivalent clean-install evidence and is not being misrepresented as such.
 - Do not blind-rerun zero-step Actions failures.
