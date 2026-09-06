@@ -27,7 +27,7 @@ The canonical competition demo must remain reproducible without Xano or paid mod
 - Analysis, persisted-run, and approval identities are treated as untrusted and must be explicitly confirmed before success is surfaced.
 - Queue discovery and per-opportunity processing fail closed without echoing private backend exception text.
 - Malformed queue items, readiness states, identifiers, and Python boolean/int aliases fail closed.
-- Direct agent tool boundaries now reject boolean/int identifier aliasing, require explicit boolean approval decisions, confirm persisted run identity after direct preparation, and confirm that decision persistence refers to the requested run.
+- Direct agent tool boundaries reject boolean identifiers and lossy numeric coercion, require explicit boolean approval decisions, confirm persisted run identity after direct preparation, and confirm that decision persistence refers to the requested run.
 - MemoryBackend preparation is idempotent for active runs; CHANGES_REQUESTED permits a fresh preparation run.
 - Competition/demo flows contain no external submission tool; approval updates internal demo state only.
 - Responsive judge HTML report is generated from the same deterministic queue/safety path and escapes backend-controlled HTML values.
@@ -37,16 +37,16 @@ The canonical competition demo must remain reproducible without Xano or paid mod
 - M6 docs include architecture, judge testing, verification, submission draft and sub-five-minute demo script.
 
 ## Latest steward movement
-- Commit `b01eef33671755f9938f6251c2847113ac2288df` hardened direct Strands tool boundaries against boolean/int identifier aliasing and malformed human-decision inputs.
-- Commit `c89e998e8dbf76791eb99acffdd7e0e735dd7e22` added deterministic regressions for boolean opportunity/run ids, non-boolean approval decisions, persisted-run identity mismatch, decision-run identity mismatch, and the no-external-submission invariant.
+- Commit `daaf611524bc2d7a96a6eb7e6b52ce3dbeab5cf0` changed the direct identifier helper from coercive `int(value)` handling to a real-int-only boundary so values such as `1.7` cannot alias opportunity/run `1`.
+- Commit `c85e12f2d5ecbc006f4d6557cdff0511945bcd23` added regressions proving lossy float identifiers are rejected before preparation or human-decision persistence.
 - These changes are source-reviewed only until clean execution evidence exists.
 
 ## Exact verification state
-- PR #2 head after the latest implementation movement was `c89e998e8dbf76791eb99acffdd7e0e735dd7e22`; refetch again after this documentation commit.
-- Exact-head CI on the preceding head `a4974085ae0ff666a9b36752690d7669182f8e77` was run `34012501568` and failed before runner execution. This is infrastructure failure, not product verification.
-- Prior GitHub-hosted Actions failures consistently showed no runner/step execution; do not blind-rerun zero-step failures.
-- A clean-clone workaround attempted on 2026-09-06 could not resolve `github.com` before checkout. This is infrastructure evidence only.
-- The latest direct-tool boundary hardening has no successful clean-environment execution evidence yet. Do not infer success from source review or mergeability.
+- PR #2 head before this documentation commit is `c85e12f2d5ecbc006f4d6557cdff0511945bcd23`; refetch after this commit.
+- Exact-head GitHub Actions on the prior head `46cc5df6f93b0dc7441516ec764474b957001b60` was run `34015045483` and failed before runner execution. Job inspection showed no executable steps/log blob, so this is infrastructure failure rather than product verification.
+- A fresh clean-clone workaround on 2026-09-06 again failed before checkout because the execution environment could not resolve `github.com`.
+- The local environment also does not already contain `strands-agents`, so a reconstructed-source run without dependency installation would not be equivalent clean-install evidence and is not being misrepresented as such.
+- Do not blind-rerun zero-step Actions failures.
 
 ## Evidence still required before merge
 1. Exact-head CI executes real checkout/install/test steps and passes on Python 3.10 and 3.12, or equivalent clean-environment evidence is obtained.
@@ -62,7 +62,7 @@ The canonical competition demo must remain reproducible without Xano or paid mod
 - Promotional-credit requests remain due 2026-09-11 12:00 PT while supplies last.
 - Project work must be newly created during the submission period except standard tools/libraries and disclosed incorporated work. The Sep 3 Xano RolePilot foundation remains explicitly disclosed.
 - AgentCore is encouraged but not required.
-- Current Strands documentation continues to support Python custom `@tool` functions and agent tool use.
+- Current Strands documentation continues to require Python 3.10+ and support Python custom `@tool` functions; model providers remain provider-agnostic with Amazon Bedrock supported.
 
 ## Current external integration status
 - Do not rely on Xano availability for the competition critical path.
