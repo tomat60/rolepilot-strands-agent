@@ -6,18 +6,18 @@ Updated: 2026-09-06
 Ship a competition-grade RolePilot Agent for AWS Agents for Humans using the Strands Agents SDK.
 
 ## Active milestone
-M0-M3 acceptance recovery, bounded M4 reliability, safe M5 live-path preparation, and M6 submission preparation on the same PR.
+M6 release hardening and final submission preparation after the accepted M0-M5 vertical slice.
 
 ## Active lane
-- Branch: `agent/m0-m1-strands-vertical-slice`
-- PR: #2 `Build first RolePilot Strands vertical slice`
-- Issues: #1 M0-M1 bootstrap/vertical slice, #3 M2 autonomous queue processing
-- Keep this as the only competition implementation/recovery PR until accepted, rejected, or genuinely blocked.
+- Runtime baseline: `main`
+- Accepted implementation PR: #2 `Build first RolePilot Strands vertical slice`
+- PR #2 merged on 2026-09-06 as `770879c853fa0b8c90295ef837b454c3d7eb6b7a`.
+- Keep further changes bounded to release evidence, live-path verification, or defects found during final submission QA.
 
 ## Accepted product direction
 RolePilot Agent processes casting opportunities up to the final external action boundary. It may discover, analyze, prepare, persist, and request/record a human decision. It must not submit a real casting application.
 
-The canonical competition demo must remain reproducible without Xano or paid model calls. `MemoryBackend` is the credential-free judge-safe path. Xano is an optional adapter only.
+The canonical competition demo remains reproducible without Xano or paid model calls. `MemoryBackend` is the credential-free judge-safe path. Xano is an optional adapter only.
 
 ## Current implementation
 - Python 3.10+ project with MIT license and `strands-agents`.
@@ -32,30 +32,26 @@ The canonical competition demo must remain reproducible without Xano or paid mod
 - Competition/demo flows contain no external submission tool; approval updates internal demo state only.
 - Responsive judge HTML report is generated from the same deterministic queue/safety path and escapes backend-controlled HTML values that cross validated boundaries.
 - Xano `/opportunities`, `/analyze`, `/runs`, and `/approval` are treated as untrusted boundaries. Arbitrary/private fields are discarded, remote error bodies are redacted, contradictory readiness signals fail closed, and identity/readiness must be explicitly validated with no lossy numeric coercion.
-- `scripts/verify_release.py` provides credential-free pytest + deterministic smoke + judge-report evidence capture under ignored `release-evidence/` and is now exercised by clean CI on Python 3.12.
+- `scripts/verify_release.py` provides credential-free pytest + deterministic smoke + judge-report evidence capture under ignored `release-evidence/` and is exercised by clean CI on Python 3.12.
 - Live Bedrock is explicit opt-in and requires model id + region before model construction. No AWS spend or live model invocation has been performed.
 - M6 docs include architecture, judge testing, verification, submission draft and sub-five-minute demo script.
 
-## Latest steward movement
-- Commit `bf912b4c88e5119a4b58cd69916ff88dd364d316` set the CI matrix to `fail-fast: false`, so Python lanes remain independently diagnosable during recovery.
-- The first real execution after infrastructure recovery exposed three stale contract tests: two expected pre-hardening exception/identity behavior and one attempted to inject an invalid string run id that the newer strict persistence gate correctly rejects.
-- Commits `7c7ff365bf0320649a93e7c61c01947e93f91242` and `0ee27e07acb821d23e7e2a1fa6d6ea0a259514a8` aligned those tests without weakening the product contract.
-- Commit `41b8df65986cbeae5a8fe3e0f69c72b2e5cd8a67` added the credential-free release verifier to the clean Python 3.12 CI lane.
+## Accepted verification evidence
+- PR #2 CI run `34040351401` validated implementation head `918cf77090d434da56314a0f4f6305f7c269d53e` through the pull-request merge ref.
+- Python 3.10 and 3.12 both completed real checkout, editable dependency installation, full pytest and deterministic smoke successfully.
+- Python 3.12 reported 75 passing tests and additionally executed `python scripts/verify_release.py` successfully.
+- The verifier generated the judge-facing HTML report and retained it as workflow artifact `9991473987`.
+- Deterministic smoke proves READY preparation stops at `PENDING_HUMAN_APPROVAL`, NEEDS_RECORDING remains unprepared, REVIEW remains unprepared, and `external_submission_performed` stays false.
+- The exact CI-generated report was downloaded and directly reviewed at 1440 px desktop width and 390 px mobile width. Both layouts passed visual QA with no horizontal clipping or broken card layout; the flow, state hierarchy, human-approval boundary and zero-external-submission evidence remain legible.
+- Full PR diff review found no committed credentials, tokens, private casting payloads or generated release evidence. Synthetic privacy/adversarial fixtures remain intentionally present in tests.
+- Verification documentation was refreshed on `main` after merge in commit `8c7702a2a4f982f116be7f749294a0e5c56017d8`.
 
-## Exact verification state
-- Exact release-candidate head before this documentation commit: `41b8df65986cbeae5a8fe3e0f69c72b2e5cd8a67`; refetch after this commit.
-- GitHub Actions run `34034743018` executed real checkout, Python setup, editable install, full pytest and deterministic smoke successfully on Python 3.10 and 3.12.
-- Python 3.12 additionally executed `python scripts/verify_release.py` successfully in the clean runner environment. The verifier re-ran pytest, deterministic smoke and judge-report generation and wrote `release-evidence/verification.json` plus `release-evidence/rolepilot-report.html` in the ephemeral runner.
-- The direct Python 3.12 pytest stage reports 75 passed tests. The deterministic smoke proves READY preparation stops at `PENDING_HUMAN_APPROVAL`, NEEDS_RECORDING remains unprepared, REVIEW remains unprepared, and `external_submission_performed` stays false.
-- Run `34034652461` also passed exact-head checkout/install/full pytest/deterministic smoke on Python 3.10 and 3.12 before the release-verifier CI addition.
-- The prior zero-step/startup blocker is no longer authoritative for the competition repo; Actions is executing jobs normally again.
-
-## Evidence still required before merge
-1. Open the generated judge report and visually review desktop plus approximately 390 px mobile width. CI proves generation but does not itself prove visual quality.
-2. Keep independent diff/scope/privacy/secrets review clean; generated report/release evidence must remain untracked.
-3. Live Bedrock remains explicitly owner-gated and unverified until one intentionally authorized run succeeds.
-4. Check final submission copy against current official Devpost fields/rules.
-5. Record the final video from verified release-head behavior and keep it within the official duration limit.
+## Evidence still required before final submission
+1. Keep final diff/scope/privacy/secrets review clean after the last release-evidence commit.
+2. Live Bedrock remains explicitly owner-gated and unverified until one intentionally authorized run succeeds.
+3. Check final submission copy against current official Devpost fields/rules.
+4. Record the final video from verified release behavior and keep it within the official duration limit.
+5. Complete AWS Builder ID and any other owner-only submission fields.
 
 ## Competition authority checked 2026-09-06
 - Official Devpost submission deadline remains 2026-09-14 17:00 PDT.
@@ -68,13 +64,13 @@ The canonical competition demo must remain reproducible without Xano or paid mod
 - Do not rely on Xano availability for the competition critical path.
 - Bedrock integration is prepared but disabled by default and remains owner-gated.
 - No AWS spend or paid resource creation is authorized.
-- No public competition submission, Builder post or video publication has been performed.
+- No public final competition submission, Builder post or final video publication has been performed from this repository lane.
 
 ## Next highest-leverage work
-1. Obtain the generated judge report from a verified release candidate and visually inspect it at desktop and around 390 px mobile width.
-2. Continue release-candidate privacy/secrets/diff review after every implementation movement.
-3. Once Paweł intentionally supplies AWS access/model permission, verify one bounded live Strands/Bedrock queue run without creating additional paid infrastructure.
-4. Continue M6 evidence capture and repository hygiene while preserving truthful claims.
+1. Verify one bounded live Strands + Bedrock queue run once Paweł intentionally supplies AWS access/model permission and approves the small model-call cost.
+2. Run the final main-branch privacy/secrets/diff check after release-evidence updates settle.
+3. Finalize Devpost copy and the short competition video against the verified product behavior.
+4. Stop adding product scope unless final QA reveals a concrete blocker.
 
 ## Owner-only gates
 - AWS login/MFA, credentials, Bedrock model access, promotional-credit request/acceptance.
