@@ -20,15 +20,9 @@ def _require_confirmed_analysis(analysis, opportunity_id: int) -> dict:
     if not isinstance(analysis, dict):
         raise TypeError("Malformed analysis response")
 
-    raw_opportunity_id = analysis.get("opportunity_id")
-    if isinstance(raw_opportunity_id, bool):
-        raise TypeError("Malformed analysis identity")
-
-    try:
-        analyzed_opportunity_id = int(raw_opportunity_id)
-    except (TypeError, ValueError) as exc:
-        raise TypeError("Malformed analysis identity") from exc
-
+    analyzed_opportunity_id = _require_strict_int_identifier(
+        analysis.get("opportunity_id"), "analysis identity"
+    )
     if analyzed_opportunity_id != opportunity_id:
         raise ValueError("Analysis opportunity mismatch")
 
@@ -46,17 +40,10 @@ def _require_confirmed_run(run, opportunity_id: int) -> dict:
     if not isinstance(run, dict):
         raise TypeError("Malformed run response")
 
-    raw_run_id = run.get("id")
-    raw_opportunity_id = run.get("opportunity_id")
-    if isinstance(raw_run_id, bool) or isinstance(raw_opportunity_id, bool):
-        raise TypeError("Malformed run identity")
-
-    try:
-        run_id = int(raw_run_id)
-        persisted_opportunity_id = int(raw_opportunity_id)
-    except (TypeError, ValueError) as exc:
-        raise TypeError("Malformed run identity") from exc
-
+    run_id = _require_strict_int_identifier(run.get("id"), "run identity")
+    persisted_opportunity_id = _require_strict_int_identifier(
+        run.get("opportunity_id"), "run identity"
+    )
     if persisted_opportunity_id != opportunity_id:
         raise ValueError("Persisted run opportunity mismatch")
 
@@ -158,10 +145,9 @@ def process_queue_safely(backend: Backend) -> dict:
             if not isinstance(opportunity, dict):
                 raise TypeError("Malformed opportunity item")
             title = opportunity.get("title")
-            raw_opportunity_id = opportunity.get("id")
-            if isinstance(raw_opportunity_id, bool):
-                raise TypeError("Malformed opportunity id")
-            opportunity_id = int(raw_opportunity_id)
+            opportunity_id = _require_strict_int_identifier(
+                opportunity.get("id"), "opportunity id"
+            )
             analysis = _require_confirmed_analysis(
                 backend.analyze(opportunity_id), opportunity_id
             )
