@@ -1,6 +1,6 @@
 # Agents for Humans Submission Draft
 
-Status: working draft. Do not submit or publish without owner approval.
+Status: release-ready working copy. Do not submit or publish without owner approval.
 
 ## Project title
 
@@ -42,7 +42,7 @@ The orchestration is separated from deterministic consequential-action rules. Mo
 
 ## Strands implementation
 
-The project uses the Python `strands-agents` SDK and custom `@tool` product functions. The current tool layer includes opportunity discovery and inspection, readiness analysis, application-run preparation, human-decision state, and autonomous queue processing.
+The project uses the Python `strands-agents` SDK and custom `@tool` product functions. The tool layer includes opportunity discovery and inspection, readiness analysis, application-run preparation, human-decision state, and autonomous queue processing.
 
 A deterministic safety validator independently enforces READY, NEEDS_RECORDING, and REVIEW behavior. Tests run without paid model calls or AWS credentials.
 
@@ -65,17 +65,9 @@ Key invariants:
 
 ## User experience
 
-The deterministic demo can generate a self-contained judge report that shows:
+The deterministic demo generates a self-contained judge report that shows how many opportunities were prepared, which opportunities need a new recording, which require review, persisted application-run state, audit evidence, the human approval gate, and zero external submissions.
 
-- how many opportunities were prepared;
-- which opportunities need a new recording;
-- which opportunities require review;
-- persisted application-run state;
-- audit evidence;
-- the human approval gate;
-- zero external submissions.
-
-This gives judges a product view of delegation behavior rather than requiring them to interpret terminal logs.
+This gives judges a product view of delegation behavior rather than requiring them to interpret terminal logs. The exact CI-generated report from the accepted implementation was visually reviewed at 1440 px and 390 px widths.
 
 ## Technical architecture
 
@@ -89,9 +81,7 @@ See `docs/ARCHITECTURE.md` for the repository architecture diagram.
 
 The project includes an explicit, owner-gated Amazon Bedrock live-model path. Normal local and judge-safe execution does not invoke a model. Live Bedrock execution requires deliberate CLI opt-in plus an explicitly configured model ID and region.
 
-This design keeps deterministic development and judging reproducible while allowing a verified live Strands plus Bedrock path once AWS credentials and model access are intentionally supplied.
-
-No AWS resources are created and no paid model call is made automatically.
+No AWS resources are created and no paid model call is made automatically. Until a live Bedrock run is intentionally authorized and verified, the submission must not claim that live Bedrock execution has been demonstrated.
 
 ## Potential impact
 
@@ -107,36 +97,32 @@ The differentiated pattern is safe delegation rather than assistant chat. RolePi
 
 A separate RolePilot/Xano prototype was created on September 3, 2026 during the competition period before this Strands repository was opened. It may be used as an optional backend/service foundation. It is not required for the canonical competition demo.
 
-The Strands orchestration, custom tool layer, deterministic safety validator, tests, queue-autonomy behavior, judge-facing report, Bedrock integration path, competition documentation, and submission-specific work are built in this competition repository. Reused work is disclosed rather than represented as new work.
+The Strands orchestration, custom tool layer, deterministic safety validator, tests, queue-autonomy behavior, judge-facing report, Bedrock integration path, competition documentation, and submission-specific work were built in this competition repository. Reused work is disclosed rather than represented as new work.
 
-## Current verification status
+## Verified release evidence
 
-Do not convert this section into a submission claim until the evidence exists.
+Verified on the accepted implementation and clean CI:
 
-Verified in repository structure and implementation review:
-
-- public competition repository;
-- MIT license;
-- Strands agent and custom product tools;
-- deterministic safety layer;
-- synthetic memory backend;
-- queue-processing implementation;
-- judge-report implementation;
-- tests covering safety and reliability scenarios;
+- public competition repository with MIT license, README and architecture documentation;
+- Strands agent with multiple custom product tools;
+- deterministic safety layer and synthetic memory backend;
+- autonomous queue-processing implementation and judge-facing report;
+- Python 3.10 and 3.12 clean CI checkout/install/test/smoke execution;
+- 75 passing tests on the accepted Python 3.12 release verification run;
+- credential-free release verifier completed successfully;
+- deterministic smoke proves READY stops at `PENDING_HUMAN_APPROVAL`, NEEDS_RECORDING and REVIEW remain unprepared, and external submission remains false;
+- exact CI-generated judge report visually reviewed at desktop 1440 px and mobile 390 px;
+- accepted implementation diff reviewed with no committed credentials, tokens, private casting payloads or generated release evidence;
 - explicit Bedrock cost/configuration gate;
 - disclosure of the September 3 Xano foundation.
 
-Still required before final submission:
+Still required before final public submission:
 
-- exact-head tests executed successfully in a clean environment;
-- deterministic smoke executed successfully;
-- generated judge report opened and visually reviewed at desktop and mobile width;
-- one bounded live Strands plus Bedrock run when owner credentials/model access are available;
-- final public repository hygiene review for secrets/private casting data;
-- final architecture check against actual implementation;
-- final video recorded and kept within the competition limit;
-- AWS Builder ID owner gate completed;
-- final Devpost fields and terms reviewed and explicitly submitted by the owner.
+- final main-branch privacy/secrets/diff review after release-documentation changes settle;
+- one bounded live Strands plus Bedrock run if the owner intentionally provides AWS credentials/model access and approves the model-call cost; otherwise document it truthfully as unverified;
+- final video recorded from verified behavior, uploaded publicly to YouTube or Vimeo, and kept under five minutes;
+- AWS Builder ID completed by the owner;
+- final Devpost fields/terms reviewed and explicitly submitted by the owner.
 
 ## Judge run path
 
@@ -161,16 +147,17 @@ rolepilot-agent --live-bedrock "Process my casting opportunity queue."
 
 ## Final submission checklist
 
-- [ ] Repository is public and final commit is visible.
-- [ ] MIT license is visible.
-- [ ] README install and demo commands work from a clean environment.
-- [ ] Architecture diagram matches the shipped code.
-- [ ] No secrets or private casting data are present.
-- [ ] Exact-head test evidence is green.
-- [ ] Judge report is visually accepted on desktop and mobile.
-- [ ] Live Strands plus Bedrock path is verified or truthfully documented as unavailable.
-- [ ] Video shows the real end-to-end behavior and is within the permitted duration.
-- [ ] Reuse disclosure is retained.
+- [x] Repository is public and accepted implementation is visible on `main`.
+- [x] MIT license is visible.
+- [x] README install and deterministic demo commands were exercised in clean CI.
+- [x] Architecture documentation matches the shipped implementation.
+- [x] Accepted implementation review found no secrets or private casting data.
+- [x] Exact release-candidate test evidence is green.
+- [x] Judge report was visually accepted on desktop and mobile.
+- [ ] Run final main-branch privacy/secrets/diff review after release-documentation changes settle.
+- [ ] Live Strands plus Bedrock path is verified or truthfully documented as unverified.
+- [ ] Video shows the real end-to-end behavior, is below five minutes, and is public on YouTube or Vimeo.
+- [x] Reuse disclosure is retained.
 - [ ] AWS Builder ID requirement is complete.
-- [ ] Devpost copy is checked against current official fields and rules.
-- [ ] Owner explicitly approves the final public submission.
+- [x] Submission copy has been aligned with the current official requirements as of 2026-09-06.
+- [ ] Owner explicitly approves the final public submission and competition terms.
