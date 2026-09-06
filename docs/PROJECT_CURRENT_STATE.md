@@ -1,6 +1,6 @@
 # Project Current State
 
-Updated: 2026-09-05
+Updated: 2026-09-06
 
 ## Mission
 Ship a competition-grade RolePilot Agent for AWS Agents for Humans using the Strands Agents SDK.
@@ -24,7 +24,8 @@ The canonical competition demo must remain reproducible without Xano or paid mod
 - Strands `Agent` orchestration exposes five custom product tools, including autonomous full-queue processing.
 - Deterministic READY / NEEDS_RECORDING / REVIEW safety logic remains separate from model output.
 - Queue autonomy prepares only safe READY items, persists runs/audit events, isolates per-opportunity failures, and surfaces unresolved decision points.
-- Queue discovery now fails closed when the backend raises or returns a non-list response; remote/private exception text is never echoed and no preparation is attempted.
+- Queue persistence now requires the returned run to explicitly contain a valid run id and the same opportunity id before preparation is reported. Missing, malformed, boolean-aliased, or mismatched persisted identity fails that lane closed to REVIEW while later opportunities continue.
+- Queue discovery fails closed when the backend raises or returns a non-list response; remote/private exception text is never echoed and no preparation is attempted.
 - Queue processing normalizes non-canonical backend analysis `state` to fail-closed `REVIEW`; malformed state text is not echoed into decision output or execution trace.
 - Malformed analysis responses that are not dictionaries fail closed per opportunity.
 - Malformed opportunity identifiers fail closed without echoing raw backend values.
@@ -39,16 +40,16 @@ The canonical competition demo must remain reproducible without Xano or paid mod
 - Xano readiness cannot become READY from incomplete remote signals: missing `can_prepare`, missing/malformed `state`, contradictory state, or READY below the required readiness threshold all fail closed to REVIEW.
 - Xano `/runs` and `/approval` responses are treated as untrusted: arbitrary backend fields, remote audit text and any remote `external_submission_performed` value are discarded. Only canonical run identifiers/state plus locally generated public-safe audit events are returned. Inconsistent run/opportunity identifiers fail closed.
 - Xano approval responses must explicitly confirm the persisted run id; an empty/malformed approval response cannot be synthesized into a successful human-decision state.
-- Regression coverage injects private-like fields into Xano list/analyze/run/approval responses and covers incomplete readiness signals, boolean opportunity-id aliasing, and queue discovery failure.
+- Regression coverage injects private-like fields into Xano list/analyze/run/approval responses and covers incomplete readiness signals, boolean opportunity-id aliasing, queue discovery failure, and persisted-run identity mismatch/missing identity.
 - `scripts/verify_release.py` provides credential-free pytest + deterministic smoke + judge-report evidence capture under ignored `release-evidence/`.
 - Live Bedrock is explicit opt-in and requires model id + region before model construction. No AWS spend or live model invocation has been performed.
 - M6 docs include architecture, judge testing, verification, submission draft and sub-five-minute demo script.
 
 ## Exact verification state
-- PR #2 exact head before this state checkpoint is `f6c2371bbb3ac9d872eb78f7f1a1f5d26252bcbe`; refetch the final head after this documentation commit.
-- Exact-head CI run `33985433932` on previous head `4388cbc3a6c63a3d33ca3f8c759ac8155163231c` failed before runner execution: Python 3.10 failure and Python 3.12 cancellation, both `runner_id=0` with `steps=[]`. Do not treat it as product verification.
+- PR #2 head before this documentation checkpoint is `023cde6c5842a979033ae2028a72d220732e7f00`; refetch the final head after this documentation commit.
+- Exact-head CI run `33994368917` on previous head `c7590c5946e9446507bb03eeb82121b5809a4c39` failed before runner execution. Do not treat it as product verification.
 - A fresh clean-clone workaround was attempted on 2026-09-05, but local execution could not reach GitHub because DNS resolution for `github.com` failed before checkout. This is infrastructure evidence only, not product verification.
-- Queue-discovery hardening and its regressions are source-reviewed but have no successful clean-environment execution evidence yet. Do not infer success from source review or mergeability.
+- Persisted-run confirmation hardening and its regressions are source-reviewed but have no successful clean-environment execution evidence yet. Do not infer success from source review or mergeability.
 - Do not blind-rerun zero-step Actions failures.
 
 ## Evidence still required before merge
