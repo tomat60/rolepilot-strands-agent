@@ -6,7 +6,7 @@ Updated: 2026-09-06
 Ship a competition-grade RolePilot Agent for AWS Agents for Humans using the Strands Agents SDK.
 
 ## Active milestone
-M0-M3 acceptance recovery, bounded M4 reliability, safe M5 live-path preparation, and M6 submission preparation on the same PR while GitHub Actions startup is unavailable.
+M0-M3 acceptance recovery, bounded M4 reliability, safe M5 live-path preparation, and M6 submission preparation on the same PR.
 
 ## Active lane
 - Branch: `agent/m0-m1-strands-vertical-slice`
@@ -30,32 +30,31 @@ The canonical competition demo must remain reproducible without Xano or paid mod
 - Direct agent tool boundaries require strict integer identifiers and explicit boolean approval decisions, confirm persisted run identity after direct preparation, and confirm that decision persistence refers to the requested run.
 - MemoryBackend preparation is idempotent for active runs; CHANGES_REQUESTED permits a fresh preparation run.
 - Competition/demo flows contain no external submission tool; approval updates internal demo state only.
-- Responsive judge HTML report is generated from the same deterministic queue/safety path and escapes backend-controlled HTML values.
-- Xano `/opportunities`, `/analyze`, `/runs`, and `/approval` are treated as untrusted boundaries. Arbitrary/private fields are discarded, remote error bodies are redacted, contradictory readiness signals fail closed, and identity must be explicitly confirmed with no numeric coercion.
+- Responsive judge HTML report is generated from the same deterministic queue/safety path and escapes backend-controlled HTML values that cross validated boundaries.
+- Xano `/opportunities`, `/analyze`, `/runs`, and `/approval` are treated as untrusted boundaries. Arbitrary/private fields are discarded, remote error bodies are redacted, contradictory readiness signals fail closed, and identity/readiness must be explicitly validated with no lossy numeric coercion.
 - `scripts/verify_release.py` provides credential-free pytest + deterministic smoke + judge-report evidence capture under ignored `release-evidence/`.
 - Live Bedrock is explicit opt-in and requires model id + region before model construction. No AWS spend or live model invocation has been performed.
 - M6 docs include architecture, judge testing, verification, submission draft and sub-five-minute demo script.
 
 ## Latest steward movement
-- Commit `dc00a1b4f3dcffd3a53da29cedf464ef11a6d173` hardened `XanoBackend._safe_int` so untrusted Xano identities are never coerced with `int(...)`; strings, floats, booleans and other aliases now fail closed.
-- Commit `2ab7312a59cc18f8b84b8269a245a454e28a1d1a` added regressions for lossy opportunity, analysis and run identities at the Xano adapter boundary.
-- These changes are source-reviewed only until clean execution evidence exists.
+- Commit `bf912b4c88e5119a4b58cd69916ff88dd364d316` set the CI matrix to `fail-fast: false`, so Python lanes remain independently diagnosable during recovery.
+- The first real execution after infrastructure recovery exposed three stale contract tests: two expected pre-hardening exception/identity behavior and one attempted to inject an invalid string run id that the newer strict persistence gate correctly rejects.
+- Commits `7c7ff365bf0320649a93e7c61c01947e93f91242` and `0ee27e07acb821d23e7e2a1fa6d6ea0a259514a8` aligned those tests without weakening the product contract: malformed analysis-state coverage now supplies the required explicit identity, malformed opportunity-id coverage expects strict TypeError classification, and judge-report escaping is tested only on backend-controlled fields that legitimately cross validated identity boundaries.
 
 ## Exact verification state
-- PR #2 head before this documentation commit is `2ab7312a59cc18f8b84b8269a245a454e28a1d1a`; refetch after this commit.
-- Exact-head GitHub Actions on prior head `b1f823a418167571847d4884aa8ce293ed979a0c` was run `34023140511` and failed before usable runner execution; this is infrastructure failure rather than product verification.
-- A fresh clean-clone workaround on 2026-09-06 failed before checkout because the execution environment could not resolve `github.com`.
-- The local environment also does not already contain `strands-agents`, so a reconstructed-source run without dependency installation would not be equivalent clean-install evidence and is not being misrepresented as such.
-- Do not blind-rerun zero-step Actions failures.
+- Exact implementation head: `0ee27e07acb821d23e7e2a1fa6d6ea0a259514a8` before this documentation commit; refetch after this commit.
+- GitHub Actions run `34034574675` executed real checkout, Python setup, editable install, full pytest and deterministic smoke on Python 3.10 and 3.12.
+- Both Python 3.10 and 3.12 jobs completed successfully, including the deterministic smoke step.
+- The prior run `34034495590` provided useful failure evidence: 72 tests passed and 3 failed before the targeted contract-test fixes above.
+- The prior zero-step/startup blocker is no longer authoritative for the competition repo; Actions is executing jobs again.
 
 ## Evidence still required before merge
-1. Exact-head CI executes real checkout/install/test steps and passes on Python 3.10 and 3.12, or equivalent clean-environment evidence is obtained.
-2. Run `python scripts/verify_release.py` from a clean installed environment and preserve the ignored evidence for review.
-3. Open the generated judge report and visually review desktop plus approximately 390 px mobile width.
-4. Keep independent diff/scope/privacy/secrets review clean; generated report/release evidence must remain untracked.
-5. Live Bedrock remains explicitly owner-gated and unverified until one intentionally authorized run succeeds.
-6. Check final submission copy against current official Devpost fields/rules.
-7. Record the final video from verified release-head behavior and keep it within the official duration limit.
+1. Run `python scripts/verify_release.py` from a clean installed environment and preserve/review its ignored evidence.
+2. Open the generated judge report and visually review desktop plus approximately 390 px mobile width.
+3. Keep independent diff/scope/privacy/secrets review clean; generated report/release evidence must remain untracked.
+4. Live Bedrock remains explicitly owner-gated and unverified until one intentionally authorized run succeeds.
+5. Check final submission copy against current official Devpost fields/rules.
+6. Record the final video from verified release-head behavior and keep it within the official duration limit.
 
 ## Competition authority checked 2026-09-06
 - Official Devpost submission deadline remains 2026-09-14 17:00 PDT.
@@ -71,7 +70,7 @@ The canonical competition demo must remain reproducible without Xano or paid mod
 - No public competition submission, Builder post or video publication has been performed.
 
 ## Next highest-leverage work
-1. Obtain executed clean-environment verification as soon as infrastructure permits, preferably through `scripts/verify_release.py`.
+1. Execute and inspect `scripts/verify_release.py` on the current release candidate while Actions is healthy.
 2. Generate and visually inspect the judge report at desktop and around 390 px mobile width.
 3. Continue release-candidate privacy/secrets/diff review after every implementation movement.
 4. Once Paweł intentionally supplies AWS access/model permission, verify one bounded live Strands/Bedrock queue run without creating additional paid infrastructure.
