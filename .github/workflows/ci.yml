@@ -28,3 +28,6 @@ jobs:
         run: pytest
       - name: Deterministic smoke
         run: rolepilot-agent --deterministic-smoke
+      - name: Release verifier
+        if: matrix.python-version == '3.12'
+        run: python scripts/verify_release.py
