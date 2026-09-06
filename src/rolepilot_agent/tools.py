@@ -8,6 +8,16 @@ from .backend import Backend
 CANONICAL_READINESS_STATES = {"READY", "NEEDS_RECORDING", "REVIEW"}
 
 
+def _require_strict_int_identifier(value, field_name: str) -> int:
+    """Reject bool/int aliasing and malformed identifiers at tool boundaries."""
+    if isinstance(value, bool):
+        raise TypeError(f"Malformed {field_name}")
+    try:
+        return int(value)
+    except (TypeError, ValueError) as exc:
+        raise TypeError(f"Malformed {field_name}") from exc
+
+
 def _require_confirmed_analysis(analysis, opportunity_id: int) -> dict:
     """Validate that analysis explicitly belongs to the requested opportunity."""
     if not isinstance(analysis, dict):
@@ -56,6 +66,39 @@ def _require_confirmed_run(run, opportunity_id: int) -> dict:
     confirmed = dict(run)
     confirmed["id"] = run_id
     confirmed["opportunity_id"] = persisted_opportunity_id
+    return confirmed
+
+
+def prepare_application_run_safely(backend: Backend, opportunity_id: int) -> dict:
+    """Prepare through a strict tool boundary and confirm persisted identity."""
+    confirmed_opportunity_id = _require_strict_int_identifier(
+        opportunity_id, "opportunity id"
+    )
+    return _require_confirmed_run(
+        backend.create_run(confirmed_opportunity_id), confirmed_opportunity_id
+    )
+
+
+def record_human_decision_safely(backend: Backend, run_id: int, approved: bool) -> dict:
+    """Record only an explicit boolean human decision for an explicit run id."""
+    confirmed_run_id = _require_strict_int_identifier(run_id, "run id")
+    if not isinstance(approved, bool):
+        raise TypeError("Malformed approval decision")
+
+    result = backend.record_human_decision(confirmed_run_id, approved)
+    if not isinstance(result, dict):
+        raise TypeError("Malformed decision response")
+
+    raw_result_run_id = result.get("id")
+    confirmed_result_run_id = _require_strict_int_identifier(
+        raw_result_run_id, "decision run id"
+    )
+    if confirmed_result_run_id != confirmed_run_id:
+        raise ValueError("Decision run mismatch")
+
+    confirmed = dict(result)
+    confirmed["id"] = confirmed_result_run_id
+    confirmed["external_submission_performed"] = False
     return confirmed
 
 
@@ -138,7 +181,7 @@ def process_queue_safely(backend: Backend) -> dict:
             )
 
             if state == "READY" and analysis.get("can_prepare") is True:
-                run = _require_confirmed_run(backend.create_run(opportunity_id), opportunity_id)
+                run = prepare_application_run_safely(backend, opportunity_id)
                 prepared.append(
                     {
                         "opportunity_id": opportunity_id,
@@ -219,7 +262,12 @@ def build_tools(backend: Backend):
         Args:
             opportunity_id: Numeric opportunity identifier.
         """
-        return _require_confirmed_analysis(backend.analyze(opportunity_id), opportunity_id)
+        confirmed_opportunity_id = _require_strict_int_identifier(
+            opportunity_id, "opportunity id"
+        )
+        return _require_confirmed_analysis(
+            backend.analyze(confirmed_opportunity_id), confirmed_opportunity_id
+        )
 
     @tool
     def prepare_application_run(opportunity_id: int) -> dict:
@@ -230,7 +278,7 @@ def build_tools(backend: Backend):
         Args:
             opportunity_id: Numeric opportunity identifier.
         """
-        return backend.create_run(opportunity_id)
+        return prepare_application_run_safely(backend, opportunity_id)
 
     @tool
     def process_casting_queue() -> dict:
@@ -255,7 +303,7 @@ def build_tools(backend: Backend):
             run_id: Prepared application run identifier.
             approved: True to approve demo state, False to request changes.
         """
-        return backend.record_human_decision(run_id, approved)
+        return record_human_decision_safely(backend, run_id, approved)
 
     return [
         list_casting_opportunities,
