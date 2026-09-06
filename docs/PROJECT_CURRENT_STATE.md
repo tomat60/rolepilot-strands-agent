@@ -24,27 +24,29 @@ The canonical competition demo must remain reproducible without Xano or paid mod
 - Strands `Agent` orchestration exposes five custom product tools, including autonomous full-queue processing.
 - Deterministic READY / NEEDS_RECORDING / REVIEW safety logic remains separate from model output.
 - Queue autonomy prepares only safe READY items, persists runs/audit events, isolates per-opportunity failures, and surfaces unresolved decision points.
-- Analysis identity is treated as untrusted at both the shared tool/queue boundary and the Xano adapter boundary: `/analyze` must explicitly return a non-boolean numeric `opportunity_id` matching the requested opportunity. Missing, malformed, boolean-aliased, or mismatched analysis identity fails closed and cannot reach preparation.
-- Queue persistence requires the returned run to explicitly contain a valid run id and the same opportunity id before preparation is reported. Missing, malformed, boolean-aliased, or mismatched persisted identity fails that lane closed to REVIEW while later opportunities continue.
-- Xano `/runs` persistence requires the backend response itself to explicitly contain the expected `opportunity_id`; the adapter does not synthesize persistence identity.
-- Queue discovery fails closed when the backend raises or returns a non-list response; remote/private exception text is never echoed and no preparation is attempted.
-- Queue processing normalizes non-canonical backend analysis `state` to fail-closed `REVIEW`; malformed state text is not echoed into decision output or execution trace.
-- Malformed queue items and opportunity identifiers, including Python boolean/int aliasing, fail closed without echoing raw backend values.
+- Analysis, persisted-run, and approval identities are treated as untrusted and must be explicitly confirmed before success is surfaced.
+- Queue discovery and per-opportunity processing fail closed without echoing private backend exception text.
+- Malformed queue items, readiness states, identifiers, and Python boolean/int aliases fail closed.
+- Direct agent tool boundaries now reject boolean/int identifier aliasing, require explicit boolean approval decisions, confirm persisted run identity after direct preparation, and confirm that decision persistence refers to the requested run.
 - MemoryBackend preparation is idempotent for active runs; CHANGES_REQUESTED permits a fresh preparation run.
 - Competition/demo flows contain no external submission tool; approval updates internal demo state only.
 - Responsive judge HTML report is generated from the same deterministic queue/safety path and escapes backend-controlled HTML values.
-- Xano `/opportunities`, `/analyze`, `/runs`, and `/approval` are treated as untrusted boundaries. Arbitrary/private fields are discarded, remote error bodies are redacted, contradictory readiness signals fail closed, and analysis/run/approval identity must be explicitly confirmed.
-- Regression coverage includes private-like backend fields, incomplete readiness signals, malformed/boolean IDs, queue discovery failure, analysis identity mismatch/missing identity, persisted-run identity mismatch/missing identity, explicit Xano `/analyze` identity confirmation, and Xano run/approval confirmation failures.
+- Xano `/opportunities`, `/analyze`, `/runs`, and `/approval` are treated as untrusted boundaries. Arbitrary/private fields are discarded, remote error bodies are redacted, contradictory readiness signals fail closed, and identity must be explicitly confirmed where required.
 - `scripts/verify_release.py` provides credential-free pytest + deterministic smoke + judge-report evidence capture under ignored `release-evidence/`.
 - Live Bedrock is explicit opt-in and requires model id + region before model construction. No AWS spend or live model invocation has been performed.
 - M6 docs include architecture, judge testing, verification, submission draft and sub-five-minute demo script.
 
+## Latest steward movement
+- Commit `b01eef33671755f9938f6251c2847113ac2288df` hardened direct Strands tool boundaries against boolean/int identifier aliasing and malformed human-decision inputs.
+- Commit `c89e998e8dbf76791eb99acffdd7e0e735dd7e22` added deterministic regressions for boolean opportunity/run ids, non-boolean approval decisions, persisted-run identity mismatch, decision-run identity mismatch, and the no-external-submission invariant.
+- These changes are source-reviewed only until clean execution evidence exists.
+
 ## Exact verification state
-- Latest Xano analysis-identity hardening commits are `8924bd6618270637b60d875b535fe9e386144371` and regression commit `c269983c734c7e7d3c715da0c7e5314c1ffc4fb6`; refetch the final PR head after this documentation commit.
-- Exact-head CI run `34009981696` on prior head `040659f23f25d13e456641916ca9699ab1ef9e95` failed before runner execution: both Python jobs had `runner_id=0` and `steps=[]`. Do not treat it as product verification.
-- A fresh clean-clone workaround was attempted again on 2026-09-06, but local execution could not reach GitHub because DNS resolution for `github.com` failed before checkout. This is infrastructure evidence only, not product verification.
-- The latest Xano analysis-identity hardening and its regression are source-reviewed but have no successful clean-environment execution evidence yet. Do not infer success from source review or mergeability.
-- Do not blind-rerun zero-step Actions failures.
+- PR #2 head after the latest implementation movement was `c89e998e8dbf76791eb99acffdd7e0e735dd7e22`; refetch again after this documentation commit.
+- Exact-head CI on the preceding head `a4974085ae0ff666a9b36752690d7669182f8e77` was run `34012501568` and failed before runner execution. This is infrastructure failure, not product verification.
+- Prior GitHub-hosted Actions failures consistently showed no runner/step execution; do not blind-rerun zero-step failures.
+- A clean-clone workaround attempted on 2026-09-06 could not resolve `github.com` before checkout. This is infrastructure evidence only.
+- The latest direct-tool boundary hardening has no successful clean-environment execution evidence yet. Do not infer success from source review or mergeability.
 
 ## Evidence still required before merge
 1. Exact-head CI executes real checkout/install/test steps and passes on Python 3.10 and 3.12, or equivalent clean-environment evidence is obtained.
