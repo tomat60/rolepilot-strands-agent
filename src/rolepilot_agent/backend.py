@@ -169,8 +169,8 @@ class XanoBackend:
         if not isinstance(raw_run, dict):
             raise RuntimeError("Xano returned malformed run response")
 
-        # An approval response must explicitly prove which persisted run was updated.
-        # Never synthesize success from the requested run id when the backend omits it.
+        # A response must explicitly prove persisted identity. Never synthesize
+        # success from the requested run/opportunity identifiers when omitted.
         if expected_run_id is not None and "id" not in raw_run:
             raise RuntimeError("Xano returned malformed run id")
         run_id = cls._safe_int(raw_run.get("id"), "run id")
@@ -178,7 +178,9 @@ class XanoBackend:
             raise RuntimeError("Xano returned inconsistent run id")
 
         if expected_opportunity_id is not None:
-            raw_opportunity_id = raw_run.get("opportunity_id", expected_opportunity_id)
+            if "opportunity_id" not in raw_run:
+                raise RuntimeError("Xano returned malformed opportunity id")
+            raw_opportunity_id = raw_run.get("opportunity_id")
             opportunity_id = cls._safe_int(raw_opportunity_id, "opportunity id")
             if opportunity_id != expected_opportunity_id:
                 raise RuntimeError("Xano returned inconsistent opportunity id")
