@@ -24,7 +24,8 @@ The canonical competition demo must remain reproducible without Xano or paid mod
 - Strands `Agent` orchestration exposes five custom product tools, including autonomous full-queue processing.
 - Deterministic READY / NEEDS_RECORDING / REVIEW safety logic remains separate from model output.
 - Queue autonomy prepares only safe READY items, persists runs/audit events, isolates per-opportunity failures, and surfaces unresolved decision points.
-- Queue persistence now requires the returned run to explicitly contain a valid run id and the same opportunity id before preparation is reported. Missing, malformed, boolean-aliased, or mismatched persisted identity fails that lane closed to REVIEW while later opportunities continue.
+- Queue persistence requires the returned run to explicitly contain a valid run id and the same opportunity id before preparation is reported. Missing, malformed, boolean-aliased, or mismatched persisted identity fails that lane closed to REVIEW while later opportunities continue.
+- Xano `/runs` persistence now also requires the backend response itself to explicitly contain the expected `opportunity_id`; the adapter no longer synthesizes the requested opportunity id when Xano omits it.
 - Queue discovery fails closed when the backend raises or returns a non-list response; remote/private exception text is never echoed and no preparation is attempted.
 - Queue processing normalizes non-canonical backend analysis `state` to fail-closed `REVIEW`; malformed state text is not echoed into decision output or execution trace.
 - Malformed analysis responses that are not dictionaries fail closed per opportunity.
@@ -40,16 +41,16 @@ The canonical competition demo must remain reproducible without Xano or paid mod
 - Xano readiness cannot become READY from incomplete remote signals: missing `can_prepare`, missing/malformed `state`, contradictory state, or READY below the required readiness threshold all fail closed to REVIEW.
 - Xano `/runs` and `/approval` responses are treated as untrusted: arbitrary backend fields, remote audit text and any remote `external_submission_performed` value are discarded. Only canonical run identifiers/state plus locally generated public-safe audit events are returned. Inconsistent run/opportunity identifiers fail closed.
 - Xano approval responses must explicitly confirm the persisted run id; an empty/malformed approval response cannot be synthesized into a successful human-decision state.
-- Regression coverage injects private-like fields into Xano list/analyze/run/approval responses and covers incomplete readiness signals, boolean opportunity-id aliasing, queue discovery failure, and persisted-run identity mismatch/missing identity.
+- Regression coverage injects private-like fields into Xano list/analyze/run/approval responses and covers incomplete readiness signals, boolean opportunity-id aliasing, queue discovery failure, persisted-run identity mismatch/missing identity, and Xano run responses that omit opportunity identity.
 - `scripts/verify_release.py` provides credential-free pytest + deterministic smoke + judge-report evidence capture under ignored `release-evidence/`.
 - Live Bedrock is explicit opt-in and requires model id + region before model construction. No AWS spend or live model invocation has been performed.
 - M6 docs include architecture, judge testing, verification, submission draft and sub-five-minute demo script.
 
 ## Exact verification state
-- PR #2 head before this documentation checkpoint is `023cde6c5842a979033ae2028a72d220732e7f00`; refetch the final head after this documentation commit.
-- Exact-head CI run `33994368917` on previous head `c7590c5946e9446507bb03eeb82121b5809a4c39` failed before runner execution. Do not treat it as product verification.
+- PR #2 head before this documentation checkpoint is `bcb9b2a1d5ba8aefdf37990d5fcf3dcc5b5ebced`; refetch the final head after this documentation commit.
+- Exact-head CI run `34002289312` on previous head `02d4da90b1a2b8617a395816b46a071ac5dff78a` failed before runner execution. Do not treat it as product verification.
 - A fresh clean-clone workaround was attempted on 2026-09-05, but local execution could not reach GitHub because DNS resolution for `github.com` failed before checkout. This is infrastructure evidence only, not product verification.
-- Persisted-run confirmation hardening and its regressions are source-reviewed but have no successful clean-environment execution evidence yet. Do not infer success from source review or mergeability.
+- Explicit Xano persisted-opportunity confirmation hardening and its regression are source-reviewed but have no successful clean-environment execution evidence yet. Do not infer success from source review or mergeability.
 - Do not blind-rerun zero-step Actions failures.
 
 ## Evidence still required before merge
@@ -61,7 +62,7 @@ The canonical competition demo must remain reproducible without Xano or paid mod
 6. Check final submission copy against current official Devpost fields/rules.
 7. Record the final video from verified release-head behavior and keep it within the official duration limit.
 
-## Competition authority checked 2026-09-05
+## Competition authority checked 2026-09-06
 - Official Devpost submission deadline remains 2026-09-14 17:00 PDT.
 - Promotional-credit requests remain due 2026-09-11 12:00 PT while supplies last.
 - Project work must be newly created during the submission period except standard tools/libraries and disclosed pre-existing incorporated work. The Sep 3 Xano RolePilot foundation remains explicitly disclosed.
