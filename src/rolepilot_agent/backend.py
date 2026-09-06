@@ -136,12 +136,10 @@ class XanoBackend:
 
     @staticmethod
     def _safe_int(value, field_name: str) -> int:
-        if isinstance(value, bool):
+        """Require a real integer identity from Xano; never coerce aliases."""
+        if isinstance(value, bool) or not isinstance(value, int):
             raise RuntimeError(f"Xano returned malformed {field_name}")
-        try:
-            return int(value)
-        except (TypeError, ValueError) as exc:
-            raise RuntimeError(f"Xano returned malformed {field_name}") from exc
+        return value
 
     @staticmethod
     def _safe_display_text(value, field_name: str) -> str:
