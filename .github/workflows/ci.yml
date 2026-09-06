@@ -31,3 +31,11 @@ jobs:
       - name: Release verifier
         if: matrix.python-version == '3.12'
         run: python scripts/verify_release.py
+      - name: Retain judge report for visual QA
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: judge-report-${{ github.sha }}
+          path: release-evidence/rolepilot-report.html
+          if-no-files-found: error
+          retention-days: 1
