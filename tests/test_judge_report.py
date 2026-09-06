@@ -29,20 +29,28 @@ def test_judge_report_explains_the_agent_workflow_and_human_boundary():
     assert "judge-safe offline demonstration" in html
 
 
-def test_judge_report_escapes_backend_controlled_run_fields():
+def test_judge_report_escapes_backend_controlled_fields_that_cross_validated_boundaries():
+    malicious_title = '<img src=x onerror="alert(1)">'
+    malicious_approval = '<script>alert("approval")</script>'
+    malicious_audit = '<svg onload="alert(2)"></svg>'
+
     class MaliciousRunBackend(MemoryBackend):
+        def list_opportunities(self) -> list[dict]:
+            opportunities = super().list_opportunities()
+            opportunities[0]["title"] = malicious_title
+            return opportunities
+
         def create_run(self, opportunity_id: int) -> dict:
             run = super().create_run(opportunity_id)
-            run["id"] = '<img src=x onerror="alert(1)">'
-            run["approval_state"] = '<script>alert("approval")</script>'
-            run["audit_events"] = ['<svg onload="alert(2)"></svg>']
+            run["approval_state"] = malicious_approval
+            run["audit_events"] = [malicious_audit]
             return run
 
     html = render_judge_report(MaliciousRunBackend())
 
-    assert '<img src=x onerror="alert(1)">' not in html
-    assert '<script>alert("approval")</script>' not in html
-    assert '<svg onload="alert(2)"></svg>' not in html
+    assert malicious_title not in html
+    assert malicious_approval not in html
+    assert malicious_audit not in html
     assert "&lt;img src=x onerror=&quot;alert(1)&quot;&gt;" in html
     assert "&lt;script&gt;alert(&quot;approval&quot;)&lt;/script&gt;" in html
     assert "&lt;svg onload=&quot;alert(2)&quot;&gt;&lt;/svg&gt;" in html
