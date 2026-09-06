@@ -1,0 +1,96 @@
+# Release Verification Evidence
+
+This document is the release-candidate evidence checklist for the Agents for Humans submission. It separates implemented behavior from behavior that has actually been executed and observed.
+
+## Rule
+
+Do not call an item verified because code exists, a workflow was created, or a check suite was scheduled. Verification requires executed evidence from the exact release head or a documented equivalent clean environment.
+
+## Credential-free release gate
+
+From a clean Python 3.10+ environment at the exact candidate commit:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -e '.[dev]'
+python scripts/verify_release.py
+```
+
+The verifier runs pytest, the deterministic smoke path, and judge-report generation. It writes `release-evidence/verification.json` with the exact commit SHA, Python version, command results and explicit manual-review/live-Bedrock pending states, plus `release-evidence/rolepilot-report.html` for visual QA. The entire generated evidence directory is ignored by Git because external/private backends may expose opportunity data.
+
+If the verifier cannot be used, the equivalent commands are:
+
+```bash
+pytest
+rolepilot-agent --deterministic-smoke
+rolepilot-agent --judge-report rolepilot-report.html
+```
+
+Record:
+
+- exact commit SHA;
+- Python version;
+- dependency install result;
+- pytest result and test count;
+- deterministic smoke result;
+- judge report path;
+- desktop visual review result;
+- approximately 390 px mobile visual review result.
+
+## Safety evidence required
+
+The release candidate must demonstrate that:
+
+- READY work may be prepared but stops at `PENDING_HUMAN_APPROVAL`;
+- NEEDS_RECORDING cannot cross the preparation gate;
+- REVIEW cannot cross the preparation gate;
+- missing or unapproved assets fail closed;
+- contradictory or malformed backend readiness fails closed;
+- one opportunity failure does not abort the rest of the queue;
+- rerunning an active prepared opportunity does not create a duplicate run;
+- `CHANGES_REQUESTED` permits a fresh preparation run;
+- judge-report backend values are HTML escaped;
+- demo approval changes internal state only;
+- external submission remains impossible because no submission tool exists.
+
+## Public-repository hygiene gate
+
+Before the final submission commit:
+
+- inspect the complete changed-file list;
+- inspect the final diff for credentials, tokens, URLs containing secrets, private casting data, private names or real application content;
+- confirm generated `rolepilot-report*.html` and `release-evidence/` artifacts are not tracked;
+- confirm the MIT license, README, architecture documentation and Xano reuse disclosure are visible;
+- confirm every public claim matches observed behavior.
+
+## Live Bedrock gate
+
+Live Bedrock is a separate owner-authorized verification step. It is not required to run the credential-free judge path and must not run automatically.
+
+When AWS access, model access and cost approval are intentionally available, record:
+
+- exact release candidate SHA;
+- configured model ID and region, without recording credentials;
+- bounded prompt used for the queue run;
+- successful Strands agent invocation and meaningful custom-tool activity;
+- confirmation that the deterministic safety gate still prevented external submission;
+- approximate AWS usage/cost if available.
+
+Until this succeeds, public copy must describe Bedrock as an implemented, explicitly gated live path rather than a verified live deployment.
+
+## Current evidence status
+
+As of 2026-09-06, GitHub-hosted CI is executing normally again. PR #2 release-candidate run `34037352312` completed successfully on Python 3.10 and 3.12 with real checkout, dependency installation, full pytest and deterministic smoke. Python 3.12 also executed `python scripts/verify_release.py` successfully and retained the generated judge report as a short-lived workflow artifact for visual QA.
+
+The direct Python 3.12 test stage reports 75 passing tests. The deterministic smoke demonstrates that READY work is prepared only to `PENDING_HUMAN_APPROVAL`, NEEDS_RECORDING and REVIEW stay unprepared, and `external_submission_performed` remains false.
+
+A current full-PR diff review found no committed credentials, tokens, private casting payloads, or generated release-evidence artifacts. Synthetic privacy/adversarial fixtures remain intentionally present in tests. This review must be repeated after any further implementation movement.
+
+Still outstanding before merge/final submission:
+
+- visually inspect the generated judge report at desktop width and approximately 390 px mobile width;
+- keep the final diff/privacy/secrets review clean after any new commit;
+- perform one bounded live Strands + Bedrock run only after explicit owner authorization, AWS/model access and cost approval;
+- verify final Devpost copy and video against the current official competition requirements.
