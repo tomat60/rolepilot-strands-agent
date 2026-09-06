@@ -147,7 +147,7 @@ def test_malformed_opportunity_id_fails_closed_without_echoing_private_value():
             "opportunity_id": None,
             "title": "Synthetic malformed opportunity",
             "state": "REVIEW",
-            "reasons": ["processing_error:ValueError"],
+            "reasons": ["processing_error:TypeError"],
         }
     ]
     assert private_identifier not in str(result)
@@ -187,6 +187,7 @@ def test_malformed_analysis_state_fails_closed_without_echoing_private_value():
         def analyze(self, opportunity_id: int) -> dict:
             if opportunity_id == 1:
                 return {
+                    "opportunity_id": opportunity_id,
                     "state": private_state,
                     "can_prepare": True,
                     "reasons": [private_state],
