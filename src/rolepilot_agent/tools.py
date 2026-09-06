@@ -8,6 +8,35 @@ from .backend import Backend
 CANONICAL_READINESS_STATES = {"READY", "NEEDS_RECORDING", "REVIEW"}
 
 
+def _require_confirmed_run(run, opportunity_id: int) -> dict:
+    """Validate that persistence explicitly confirms the intended opportunity.
+
+    A backend returning a malformed or unrelated run must never be surfaced as
+    successfully prepared. The persisted identity is treated as untrusted input.
+    """
+    if not isinstance(run, dict):
+        raise TypeError("Malformed run response")
+
+    raw_run_id = run.get("id")
+    raw_opportunity_id = run.get("opportunity_id")
+    if isinstance(raw_run_id, bool) or isinstance(raw_opportunity_id, bool):
+        raise TypeError("Malformed run identity")
+
+    try:
+        run_id = int(raw_run_id)
+        persisted_opportunity_id = int(raw_opportunity_id)
+    except (TypeError, ValueError) as exc:
+        raise TypeError("Malformed run identity") from exc
+
+    if persisted_opportunity_id != opportunity_id:
+        raise ValueError("Persisted run opportunity mismatch")
+
+    confirmed = dict(run)
+    confirmed["id"] = run_id
+    confirmed["opportunity_id"] = persisted_opportunity_id
+    return confirmed
+
+
 def process_queue_safely(backend: Backend) -> dict:
     """Process the full queue up to the human/external-action boundary.
 
@@ -87,7 +116,7 @@ def process_queue_safely(backend: Backend) -> dict:
             )
 
             if state == "READY" and analysis.get("can_prepare") is True:
-                run = backend.create_run(opportunity_id)
+                run = _require_confirmed_run(backend.create_run(opportunity_id), opportunity_id)
                 prepared.append(
                     {
                         "opportunity_id": opportunity_id,
@@ -187,8 +216,10 @@ def build_tools(backend: Backend):
 
         READY opportunities are prepared and persisted. NEEDS_RECORDING, REVIEW,
         queue-discovery failures, malformed backend analysis state, malformed queue items,
-        and per-opportunity processing failures are surfaced without preparation. The result
-        includes a deterministic execution trace for auditability. This tool cannot submit externally.
+        and per-opportunity processing failures are surfaced without preparation. Persisted
+        run identity must explicitly match the opportunity before preparation is reported.
+        The result includes a deterministic execution trace for auditability. This tool cannot
+        submit externally.
         """
         return process_queue_safely(backend)
 
